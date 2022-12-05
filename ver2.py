@@ -38,26 +38,26 @@ def getParent(node):
 
 def getChildren(node):
     return children_map.get(node)
+def getSiblings(node):
+    return getChildren(getParent(node))
 
 spojniki = getSpojniki()
 print(spojniki[0].get('nid'), spojniki[1].get('nid'))
 
 def getSpojnikValue(node):
     return getChildren(spojniki[0])[0].find('terminal').find('orth').text
-print(getSpojnikValue(spojniki[0]))
-"""tab = []
-count = 0
-for child in root.iter('node'):
-    if child.get('chosen') =='true':
-        tab.append(child.get('nid'))
-        count += 1
-print(count)
-tab = list(map(int, tab))
-print(tab)
-tab1  = []
-tab1  = parent_map.keys()
+def getTagSpojnika(node):
+    return getChildren(spojniki[0])[0].find('terminal').find('f').text
+def getKategoriaKoordynacji(node):
+    kategorie = []
+    for x in getSiblings(node):
+        for y in x.iter('category'):
+            kategorie.append(y.text)
+    rozne_kategorie = set(kategorie)
+    rozne_kategorie.discard('spójnik')
+    assert len(rozne_kategorie) == 1
+    return next(iter(rozne_kategorie))
 
-tab2 = list(tab1)
-tab2 = list(map(int, tab2))
-tab2.sort()
-print(tab2)"""
+print(spojniki[0].get('nid'))
+print(getKategoriaKoordynacji(spojniki[0]))
+
