@@ -2,7 +2,7 @@ import copy
 import csv
 import xml.etree.ElementTree as ET
 
-tree = ET.parse('../Składnica-frazowa-200319/NKJP_1M_4scal-NIE/morph_38-p/morph_38.63-s.xml')
+tree = ET.parse('../Składnica-frazowa-200319/NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml')
 #NKJP_1M_4scal-NIE/morph_38-p/morph_38.63-s.xml
 #NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml
 root = tree.getroot()
@@ -47,9 +47,12 @@ def getParent(node):
 def getChildren(node):
     return children_map.get(node)
 def getSiblings(node):
-    return getChildren(getParent(node))
-
-
+    wynik = getChildren(getParent(node))
+    xd = []
+    for x in wynik:
+        if x.get("nid") != node.get("nid"):
+            xd.append(x)
+    return xd
 
 def getSpojnikValue(node):
     return getChildren(node)[0].find('terminal').find('orth').text
@@ -67,71 +70,91 @@ def getKategoriaKoordynacji(node):
 def getKategoriaRodzicaKoordynacji(node):
     return getParent(getParent(node)).find('nonterminal').find('category').text
 
-def getNadrzednik(node):
-    #x = None
-    #y = None
-    a = node
-    b = None
-    # zrób funkcję żeby się dało łatwo znajdować get children get child i takie tam
-    # tutaj trzeba while'a wrzucić żeby cofał się póki się skończy "szare"
-    for x in getParent(a).iter('children'):
-        if x.get('chosen') == 'true':
-            for y in x.iter('child'):
-                if y.get('nid') == a.get('nid'):
-                    if y.get('head') == 'true':
-                        a = getParent(a)
-    print(getParent(a).attrib)
-    for x in a.iter('children'):
-        if x.get('chosen') == 'true':
-            for y in x.iter('child'):
-                if y.get('head') == 'true':
-                    for wow in root.iter('node'):
-                        if wow.get('nid') == y.get('nid'):
-                            b = wow
-    while b.find('terminal') == None:
-        for x in b.iter('children'):
+def getNodeWhereGreyEnds(node): #idąc od góry drzewa znajduje pierwszy node, w którym zaczyna się szare
+    a = getParent(node)
+    b = node
+    while a == getParent(b):
+        for x in a.iter('children'):
             if x.get('chosen') == 'true':
                 for y in x.iter('child'):
-                    if y.get('head') == 'true':
-                        for wow in root.iter('node'):
-                            if wow.get('nid') == y.get('nid'):
-                                b = wow
+                    if y.get('nid') == b.get('nid'):
+                        a = getParent(a)
+                        if y.get('head') == 'true':
+                            b = getParent(b)
     return b
-
-
-
-    """dziadek = getParent(getParent(node))
-    if len(getSiblings(dziadek)) == 1:
-        x = getSiblings(dziadek)[0].find('nonterminal').find('category').text
+def findSzareTerminalAttribute(node): #przeszukuje poddrzewa po szarym, aż znajdzie atrybut 'terminal'
+    a = node
+    for x in a.iter("children"):
+        if x.get("chosen") == "true":
+            for y in x.iter("child"):
+                if y.get("head") == "true":
+                    a = findSzareTerminalAttribute(findNode(y.get("nid")))
+    return a
+def findTerminalAttributes(node):
+    a = node
+    wynik = []
+    if a.find("terminal") is None:
+        for x in a.iter("children"):
+            if x.get("chosen") == "true":
+                for y in x.iter("child"):
+                    wynik.append(findTerminalAttributes(findNode(y.get("nid"))))
     else:
-        for child in getChildren(getParent(dziadek)):
-            if child != dziadek:
-                while getChildren(child) is not None:
-                    child = getChildren(child)[0]
-                y = child
-        x = y
-        return x
-        """
-def getPozycjaNadrzednika(node):
-  #  tab = getCaleZdanie().split()
- #   for x in tab:
-#        if x
-    return
+        wynik.append(node)
+        return wynik
+
+    return wynik
+def findNode(nid):
+    for x in root.iter("node"):
+        if x.get("nid") == str(nid):
+            return x
+
+def getNadrzednik(node):
+    return findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(node)))
+def getPozycjaNadrzednika(nodeNadrzednik, nodeSpojnik):
+    tab = root.find("text").text.split()
+    czyZnalazles = False
+    pozycja = "0"
+    for slowo in tab:
+        if not czyZnalazles:
+            if slowo == nodeNadrzednik:
+                czyZnalazles = True
+                pozycja = "L"
+            elif slowo == nodeSpojnik:
+                czyZnalazles = True
+                pozycja = "R"
+    return pozycja
+
 def getTagNadrzednka(node):
     return
 
 def getKategoriaNadrzednika(node):
     return getParent(node).find('nonterminal').find('category').text
-def getWordCount(node):
-    return
+def getWordCount(node): #podajemy node na tym samym poziomie co node z "category" == "spojnik"
+    return len(findTerminalAttributes(node))
+
+   #wynik = []
+   # for x in findTerminalAttributes(node):
+    #    while type(x) == list:
+     #       x = x[0]
+      #  wynik.append(x.find("terminal").find("orth").text)
+    #a = " ".join(wynik)
+
 def getSylablesCount(node):
     return
 def getCharCount(node):
-    return
-def getCaleZdanie():
-    return root.find('text').text
+    return len(getCzlon(node))
+
+def getCzlon(node):
+    wynik = []
+    for x in findTerminalAttributes(node):
+        while type(x) == list:
+           x = x[0]
+        wynik.append(x.find("terminal").find("orth").text)
+    a = " ".join(wynik)
+    return a
 
 def setInfo(x):
+        informacje[0] = getPozycjaNadrzednika(getNadrzednik(x).find('terminal').find('orth').text, getSpojnikValue(x))
         informacje[1] = getNadrzednik(x).find('terminal').find('orth').text
         informacje[2] = getTagSpojnika(getParent(getNadrzednik(x)))
         informacje[3] = getKategoriaNadrzednika(getNadrzednik(x))
@@ -140,12 +163,18 @@ def setInfo(x):
         informacje[6] = getTagSpojnika(x)
         informacje[7] = getKategoriaKoordynacji(x)
         informacje[8] = getKategoriaRodzicaKoordynacji(x)
-
+        informacje[9] = getWordCount(getSiblings(x)[0])
+        informacje[10]
+        informacje[11] = getCharCount(getSiblings(x)[0])
+        informacje[12] = getCzlon(getSiblings(x)[0])
+        informacje[13] = 
+        informacje[14]
 spojniki = getSpojniki()
 for x in spojniki:
     setInfo(x)
     print(getSpojnikValue(x))
     wyniki.append(copy.deepcopy(informacje))
 
-
+for x in getSiblings(spojniki[0]):
+    print(x.attrib)
 print(wyniki)
