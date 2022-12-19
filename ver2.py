@@ -1,17 +1,23 @@
 import copy
 import csv
 import xml.etree.ElementTree as ET
-
-tree = ET.parse('../Składnica-frazowa-200319/NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml')
-#NKJP_1M_4scal-NIE/morph_38-p/morph_38.63-s.xml
-#NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml
+import os
+filePath = '../Składnica-frazowa-200319/NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml'
+tree = ET.parse(filePath)
 root = tree.getroot()
-node_root  = root.find('node')
+node_root = root.find('node')
 assert node_root.get('nid') == '0'
-parent_map = {} #słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
+parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
 children_map = {}
-informacje = [None] * 21
+informacje = [None] * 20
 wyniki = []
+
+#NKJP_1M_4scal-NIE/morph_38-p/morph_38.63-s.xml niebinarna koordynacj
+#NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml działa
+#NKJP_1M_4scal-KOT/morph_1-p/morph_1.51-s.xml niebinarna koordynacja (nie działa)
+#NKJP_1M_1202900065/morph_2-p/morph_2.15-s działa
+#NKJP_1M_1202900065/morph_2-p/morph_2.53-s
+
 
 def getActuallTree(node):
     for x in node.iter('node'):
@@ -24,7 +30,7 @@ def getActuallTree(node):
                                 parent_map[y] = x
 
 parent_map[node_root] = node_root
-getActuallTree(root) #nid = 0 to zawsze korzeń
+getActuallTree(root)  # nid = 0 to zawsze korzeń
 for k, v in parent_map.items():
     children_map[v] = children_map.get(v, []) + [k]
 
@@ -73,7 +79,7 @@ def getKategoriaRodzicaKoordynacji(node):
 def getNodeWhereGreyEnds(node): #idąc od góry drzewa znajduje pierwszy node, w którym zaczyna się szare
     a = getParent(node)
     b = node
-    while a == getParent(b):
+    while a == getParent(b) and a != findNode(0):
         for x in a.iter('children'):
             if x.get('chosen') == 'true':
                 for y in x.iter('child'):
@@ -153,7 +159,7 @@ def getCzlon(node):
     a = " ".join(wynik)
     return a
 
-def setInfo(x):
+def setInfo():
         informacje[0] = getPozycjaNadrzednika(getNadrzednik(x).find('terminal').find('orth').text, getSpojnikValue(x))
         informacje[1] = getNadrzednik(x).find('terminal').find('orth').text
         informacje[2] = getTagSpojnika(getParent(getNadrzednik(x)))
@@ -164,17 +170,63 @@ def setInfo(x):
         informacje[7] = getKategoriaKoordynacji(x)
         informacje[8] = getKategoriaRodzicaKoordynacji(x)
         informacje[9] = getWordCount(getSiblings(x)[0])
-        informacje[10]
+        informacje[10] = None#sylaby
         informacje[11] = getCharCount(getSiblings(x)[0])
         informacje[12] = getCzlon(getSiblings(x)[0])
-        informacje[13] = 
-        informacje[14]
+        informacje[13] = getNodeWhereGreyEnds(getSiblings(x)[0]).find("nonterminal").find("category").text
+        informacje[14] = getWordCount(getSiblings(x)[1])
+        informacje[15] = None#sylaby
+        informacje[16] = getCharCount(getSiblings(x)[1])
+        informacje[17] = getCzlon(getSiblings(x)[1])
+        informacje[18] = getNodeWhereGreyEnds(getSiblings(x)[1]).find("nonterminal").find("category").text
+        informacje[19] = root.find("text").text
+
+
 spojniki = getSpojniki()
 for x in spojniki:
-    setInfo(x)
+    setInfo()
     print(getSpojnikValue(x))
     wyniki.append(copy.deepcopy(informacje))
 
-for x in getSiblings(spojniki[0]):
-    print(x.attrib)
-print(wyniki)
+def writeToFile(tab):
+    with open("./data.csv", "w", newline='') as f:
+        header = ["Pozycja Nadrzędnika", "Nadrzędnik", "Tag Nadrzędnika", "Kategoria Nadrzędnika",
+                  "Kategoria Rodzica Nadrzędnika", "Spójnik",
+                  "Tag Spójnika", "Kategoria Koordynacji", "Kategoria Rodzica Koordynacji", "Słowa Pierwszego Członu",
+                  "Sylaby Pierwszego Członu",
+                  "Znaki Pierwszego Członu", "Pierwszy Człon", "Kategoria Pierwszego Członu", "Słowa Drugiego Członu",
+                  "Sylaby Drugiego Członu",
+                  "Znaki Drugiego Członu", "Drugi Człon", "Kategoria Drugiego Członu", "Całe Zdanie"]
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        writer.writerow({"Pozycja Nadrzędnika": tab[0][0],
+                         "Nadrzędnik": tab[0][1],
+                         "Tag Nadrzędnika": tab[0][2],
+                         "Kategoria Nadrzędnika": tab[0][3],
+                         "Kategoria Rodzica Nadrzędnika": tab[0][4],
+                         "Spójnik": tab[0][5],
+                         "Tag Spójnika": tab[0][6],
+                         "Kategoria Koordynacji": tab[0][7],
+                         "Kategoria Rodzica Koordynacji": tab[0][8],
+                         "Słowa Pierwszego Członu": tab[0][9],
+                         "Sylaby Pierwszego Członu": tab[0][10],
+                         "Znaki Pierwszego Członu": tab[0][11],
+                         "Pierwszy Człon": tab[0][12],
+                         "Kategoria Pierwszego Członu": tab[0][13],
+                         "Słowa Drugiego Członu": tab[0][14],
+                         "Sylaby Drugiego Członu": tab[0][15],
+                         "Znaki Drugiego Członu": tab[0][16],
+                         "Drugi Człon": tab[0][17],
+                         "Kategoria Drugiego Członu": tab[0][18],
+                         "Całe Zdanie": tab[0][19],
+                         })
+
+writeToFile(wyniki)
+"""def main():
+    pathwithfolder = ""
+    for folder in os.listdir(path):
+        pathwithfolder = os.path.join(path, folder)
+        for filename in os.listdir(pathwithfolder):
+            fullname = os.path.join(pathwithfolder, filename, ".xml")
+            writeToFile(analizeFile(openFile(fullname)))
+main()"""
