@@ -152,19 +152,46 @@ def getCzlon(node, root):
     for x in findTerminalAttributes(node, root, []):
         wynik.append(x.find("terminal").find("orth").text)
     #        print(f"y: {z.attrib}")
-    wynik = sortuj(wynik, root.find("text").text)
+    #wynik = sortuj(wynik, root.find("text").text)
     a = " ".join(wynik)
     #print(a)
     return a
-def sortuj(doPosortowania, wgTegoSortuj):
+"""def sortuj(doPosortowania, wgTegoSortuj):
     wgTegoSortuj = wgTegoSortuj[0:-1] # usuwanie znaku interpunkcyjnego
     klucz = {c: i for i, c in enumerate(wgTegoSortuj.split())}
-    print(klucz)
+    #print(klucz)
     wyniki = sorted(doPosortowania, key=klucz.get)
-    return wyniki
+    return wyniki"""
+def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik):
+    caleZdanie = root.find("text").text
+    gdzieSpojnik = caleZdanie.split().index(spójnik)
+    #print(dlCzlon1, dlCzlon2)
+    czlon1 = caleZdanie.split()[caleZdanie.split().index(spójnik)-dlCzlon1:caleZdanie.split().index(spójnik)]
+    czlon2 = caleZdanie.split()[caleZdanie.split().index(spójnik)+1: caleZdanie.split().index(spójnik)+dlCzlon2+1]
+    #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
+    return czlon1, czlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         rodzenstwo = getSiblings(spójnik, parent_map, children_map)
-        czlon1 = ''
+        dlugoscCzlon1 = getWordCount(rodzenstwo[0], root)
+        dlugoscCzlon2 = getWordCount(rodzenstwo[1], root)
+        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map))
+        #print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
+        if len(czlon1) != dlugoscCzlon1 or len(czlon2) != dlugoscCzlon2:
+            czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon2, dlugoscCzlon1, root, getSpojnikValue(spójnik, children_map))
+            rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
+            #print(czlon1, czlon2)
+        czlon1 = " ".join(czlon1)
+        czlon2 = " ".join(czlon2)
+        print(czlon1, czlon2)
+        if list(czlon2.split()[-1])[-1] in [".", "?","!"]:
+            #lul = list(czlon2.split()[-1])[0:-1]
+            #print("".join(lul))
+            czlon2 = czlon2[0:-1]
+            #print(czlon2)
+            #czlon2 = czlon2.join(lul)
+        print(czlon2)
+
+        """czlon1 = ''
         czlon2 = ''
         for i in getCzlon(rodzenstwo[0], root):
             if i != " ":
@@ -180,6 +207,7 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         czlony = sortuj(czlony, root.find("text").text)
         if czlon1 == czlony[1]:
             rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
+        print(czlony)"""
         tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
         tab[1] = getNadrzednik(spójnik, root, parent_map).find('terminal').find('orth').text
         tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map), parent_map), children_map)
@@ -189,17 +217,17 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
         tab[8] = getKategoriaRodzicaKoordynacji(spójnik, parent_map)
-        tab[9] = getWordCount(rodzenstwo[0], root)
+        tab[9] = len(czlon1.split())
         #for i in getSiblings(spójnik, parent_map, children_map):
          #   print(i.attrib)
         tab[10] = None#sylaby
-        tab[11] = getCharCount(rodzenstwo[0], root)
-        tab[12] = getCzlon(rodzenstwo[0], root)
+        tab[11] = len(czlon1)
+        tab[12] = czlon1
         tab[13] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
-        tab[14] = getWordCount(rodzenstwo[1], root)
+        tab[14] = len(czlon2.split())
         tab[15] = None#sylaby
-        tab[16] = getCharCount(rodzenstwo[1], root)
-        tab[17] = getCzlon(rodzenstwo[1], root)
+        tab[16] = len(czlon2)
+        tab[17] = czlon2
         tab[18] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
         tab[19] = root.find("text").text
         tab[20] = root.get("sent_id")
@@ -259,15 +287,15 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    path = [#"../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
-            #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
-#"../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_1202000009/morph_196-p/morph_196.14-s.xml"]
-##"../Składnica-frazowa-200319/NKJP_1M_2002000176/morph_5-p/morph_5.62-s.xml",
-#"../Składnica-frazowa-200319/NKJP_1M_2004000005/morph_8-p/morph_8.81-s.xml",
-#"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
-#"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
-#"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
+    path = ["../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
+            "../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_1202000009/morph_196-p/morph_196.14-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_2002000176/morph_5-p/morph_5.62-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_2004000005/morph_8-p/morph_8.81-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
+"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
     for i in path:
         openFile(i)
     """i = 0
