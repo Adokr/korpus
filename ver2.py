@@ -185,12 +185,17 @@ def czyTylkoPojedynczeGlowy(root):
                         zbiory.append(tab)
     return ileTakich == 0, zbiory
 
+def podwojneGlowyWCzlonieKoordynacji(nodeCzlonu, nodePodwojnejGlowy, root, parent_map):
+    for i in nodePodwojnejGlowy:
+        if findNode(i, root) in findTerminalAttributes(nodeCzlonu, root, [], parent_map):
+            return True
+    return False
 
 def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     lepszeWgTegoSortuj = []
     lepszeDoPosortowania = []
     for i in wgTegoSortuj.split():
-        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";", '"']:
             k = copy.deepcopy(i[-1])
             i = i[0:-1]
             lepszeWgTegoSortuj.append(i)
@@ -198,7 +203,7 @@ def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
         else:
             lepszeWgTegoSortuj.append(i)
     for i in doPosortowania.split():
-        if list(i.split()[-1]) in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1]) in [".", "?", "!", ",", ";", '"']:
             i = i[0:-1]
         lepszeDoPosortowania.append(i)
     #print(lepszeWgTegoSortuj)
@@ -223,11 +228,16 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     caleZdanie = root.find("text").text
     lepszeCaleZdanie = []
     for i in caleZdanie.split():
-        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";", '"']:
             k = copy.deepcopy(i[-1])
             i = i[0:-1]
             lepszeCaleZdanie.append(i)
             lepszeCaleZdanie.append(k)
+        elif list(i.split()[-1])[0] in ['"']:
+            k = copy.deepcopy(i[0])
+            i = i[1:]
+            lepszeCaleZdanie.append(k)
+            lepszeCaleZdanie.append(i)
         else:
             lepszeCaleZdanie.append(i)
     """k = 0
@@ -244,26 +254,26 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     #print(gdzieSpojnik)
     czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
     czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
-    #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
+    print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
     ileZnakowInter1 = 0
     ileZnakowInter2 = 0
     lepszyCzlon1 = copy.deepcopy(czlon1)
     lepszyCzlon2 = copy.deepcopy(czlon2)
     for i in range(len(czlon1)):
-        if czlon1[i] in [",", ".", ";"]:
+        if czlon1[i] in [",", ".", ";", '"']:
             ileZnakowInter1 += 1
             lepszyCzlon1[i-1] = lepszyCzlon1[i-1] + lepszyCzlon1[i]
             lepszyCzlon1.pop(i)
     for i in range(ileZnakowInter1):
         lepszyCzlon1.append(lepszeCaleZdanie[gdzieSpojnik+i])
     for i in range(len(czlon2)):
-        if czlon2[i] in [",", ".", ";"]:
+        if czlon2[i] in [",", ".", ";", '"']:
             ileZnakowInter2 += 1
             lepszyCzlon2[i - 1] = lepszyCzlon2[i - 1] + lepszyCzlon2[i]
             lepszyCzlon2.pop(i)
     for i in range(ileZnakowInter2):
         lepszyCzlon2.append(lepszeCaleZdanie[gdzieSpojnik+dlCzlon2+i+1])
-    #print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
+    print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
     return lepszyCzlon1, lepszyCzlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
@@ -282,11 +292,17 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         #czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root, parent_map), root.find("text").text, root, False)
         #czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root, parent_map), root.find("text").text, root, czyKoniecZdania)
         #print(f"czlon1sortuj: {czlon1}\nczlon2sortuj: {czlon2}")
+     #   print(podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][0], root, parent_map))
         whereSpójnik = int(spójnik.get("from"))
         if not czyTylkoPojedynczeGlowy(root)[0]:
             for i in range(len(czyTylkoPojedynczeGlowy(root)[1])):
                 if int(findNode(czyTylkoPojedynczeGlowy(root)[1][i][0], root).get("from")) < int(spójnik.get("from")):
                     whereSpójnik -= 1
+                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+                        dlugoscCzlon1 -= 1
+                else:
+                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[1], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+                        dlugoscCzlon2 -= 1
         czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, whereSpójnik)
         czlon1 = " ".join(czlon1)
         czlon2 = " ".join(czlon2)
@@ -374,7 +390,8 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #path = ["../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
+    #path = ["../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
+            #"../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
             #../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
@@ -391,8 +408,8 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-    #for i in path:
-     #   openFile(i)
+   # for i in path:
+    #    openFile(i)
 
     with open("./data.csv", "w", newline=''):
         print("")
@@ -403,7 +420,7 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<200:
+                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<300:
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
