@@ -22,7 +22,7 @@ def getActuallTree(node, dict):
                             if y.attrib['nid'] == c.get('nid'):
                                 dict[y] = x
     return dict
-def getSpojniki(parent_map):
+def getSpojniki(parent_map, root):
     wynik = []
     for x in parent_map.keys():
         for category in x.iter('category'):
@@ -32,7 +32,7 @@ def getSpojniki(parent_map):
                         for z in y.iter('child'):
                             if z.get('head') == 'true' and z.get('nid') == x.get('nid'):
                                 #print(z.attrib)
-                                if len(x.find("children").findall("child")) == 1:
+                                if len(x.find("children").findall("child")) == 1 and findNode(x.find("children").find("child").get("nid"), root).find("terminal").find("f").text == "conj":
                                     wynik.append(x)
     return wynik
 
@@ -47,7 +47,7 @@ def getSiblings(node, parent_map, children_map):
     rozne_wyniki.discard(getParent(node, parent_map))
     xd = []
     for x in rozne_wyniki:
-        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text != "znakkonca":
+        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text != "znakkonca" and x.find("nonterminal").find("category").text != "pauza":
             xd.append(x)
 
     return xd
@@ -89,25 +89,34 @@ def findSzareTerminalAttribute(node, root): #przeszukuje poddrzewa po szarym, a�
                 if y.get("head") == "true":
                     a = findSzareTerminalAttribute(findNode(y.get("nid"), root), root)
     return a
-def findTerminalAttributes(node, root, wynik):
+def findTerminalAttributes(node, root, wynik, parent_map):
     a = node
     #wynik = []
     if a.find("terminal") is None:
         for x in a.iter("children"):
             if x.get("chosen") == "true":
                 for y in x.iter("child"):
-                    z = findTerminalAttributes(findNode(y.get("nid"), root), root, wynik)
+                    z = findTerminalAttributes(findNode(y.get("nid"), root), root, wynik, parent_map)
 
-                    while type(z) == list:
-                        z = z[0]
-                    wynik.append(z)
+                    if len(z) > 0:
+                        while type(z) == list:
+                            z = z[0]
+                        wynik.append(z)
     else:
-        wynik.append(node)
+        if getParent(a, parent_map).find("nonterminal").find("category").text != "przec":
+            wynik.append(node)
     #print("wynik:")
     #for x in wynik:
      #   print(x.attrib)
     secior = set(wynik)
     wynik = list(secior)
+   # for i in root.iter("node"):
+    #    if int(i.get("from")) + 2 == int(root.find("startnode").get("to")):
+     #       if i.find("terminal") is not None:
+      #          for j in root.iter("node"):
+       #             if j.find("terminal") is None:
+        #                if j.find("nonterminal").find("category").text == "znakkonca" and j.get("chosen") == "true":
+         #                   wynik[wynik.index(findNode(i.get("nid"), root).find("terminal").find("orth").text)].append(findNode(j.find("children").find("child").get("nid"), root).find("terminal").find("orth").text)
     return wynik
 def findNode(nid, root):
     for x in root.iter("node"):
@@ -133,13 +142,13 @@ def getPozycjaNadrzednika(nodeNadrzednik, nodeSpojnik, root):
 
 def getKategoriaNadrzednika(node, parent_map):
     return getParent(node, parent_map).find('nonterminal').find('category').text
-def getWordCount(node, root): #podajemy node na tym samym poziomie co node z "category" == "spojnik"
-    return len(findTerminalAttributes(node, root, []))
+def getWordCount(node, root, parent_map): #podajemy node na tym samym poziomie co node z "category" == "spojnik"
+    return len(findTerminalAttributes(node, root, [], parent_map))
 def getSylablesCount(node):
     return
-def getCharCount(node, root):
-    return len(getCzlon(node, root))
-def getCzlon(node, root):
+def getCharCount(node, root, parent_map):
+    return len(getCzlon(node, root, parent_map))
+def getCzlon(node, root, parent_map):
     wynik = []
     """for x in findTerminalAttributes(node, root):
         print(f"x: {x}")
@@ -151,14 +160,14 @@ def getCzlon(node, root):
     #        print(f"y: {z.attrib}")
         wynik.append(y.find("terminal").find("orth").text)"""
     #print(findTerminalAttributes(node, root, []))
-    for x in findTerminalAttributes(node, root, []):
+    for x in findTerminalAttributes(node, root, [], parent_map):
         wynik.append(x.find("terminal").find("orth").text)
     #        print(f"y: {z.attrib}")
     #wynik = sortuj(wynik, root.find("text").text)
     a = " ".join(wynik)
     #print(a)
     return a
-def sortuj(doPosortowania, wgTegoSortuj):
+def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     lepszeWgTegoSortuj = []
     lepszeDoPosortowania = []
     for i in wgTegoSortuj.split():
@@ -173,15 +182,25 @@ def sortuj(doPosortowania, wgTegoSortuj):
         if list(i.split()[-1]) in [".", "?", "!", ",", ";"]:
             i = i[0:-1]
         lepszeDoPosortowania.append(i)
-    print(lepszeWgTegoSortuj)
-    print(lepszeDoPosortowania)
-
+    #print(lepszeWgTegoSortuj)
+    """doPosortowania = doPosortowania.split()
+    print(doPosortowania)
+    if czyKoniecZdania:
+        for i in root.iter("node"):
+            if int(i.get("from")) + 2 == int(root.find("startnode").get("to")):
+                if i.find("terminal") is not None:
+                    for j in root.iter("node"):
+                        if j.find("terminal") is None:
+                            if j.find("nonterminal").find("category").text == "znakkonca" and j.get("chosen") == "true":
+                                ktore = doPosortowania.index(findNode(i.get("nid"), root).find("terminal").find("orth").text)
+                                print(ktore)
+                                doPosortowania[ktore] = doPosortowania[ktore] + (findNode(j.find("children").find("child").get("nid"), root).find("terminal").find("orth").text)
+                                print(doPosortowania[ktore])"""
     #wgTegoSortuj = wgTegoSortuj[0:-1] # usuwanie znaku interpunkcyjnego
     klucz = {c: i for i, c in enumerate(lepszeWgTegoSortuj)}
-    #print(klucz)
     wyniki = sorted(lepszeDoPosortowania, key=klucz.get)
     return wyniki
-def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2):
+def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2, indeksSpojnika):
     caleZdanie = root.find("text").text
     lepszeCaleZdanie = []
     for i in caleZdanie.split():
@@ -192,60 +211,47 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2):
             lepszeCaleZdanie.append(k)
         else:
             lepszeCaleZdanie.append(i)
-    k = 0
+    """k = 0
     for i in range(len(czlon1)):
         for j in range(len(czlon2)):
             if lepszeCaleZdanie.index(czlon2[j]) < lepszeCaleZdanie.index(czlon1[i]):
                 k += 1
     if k == dlCzlon1 * dlCzlon2:
-        dlCzlon1, dlCzlon2 = dlCzlon2, dlCzlon1
+        dlCzlon1, dlCzlon2 = dlCzlon2, dlCzlon1"""
     #print(f"s: {spójnik}")
     #print(lepszeCaleZdanie)
-    gdzieSpojnik = lepszeCaleZdanie.index(spójnik)
-
+    #gdzieSpojnik = lepszeCaleZdanie.index(spójnik)
+    #print(gdzieSpojnik)
+    gdzieSpojnik = int(indeksSpojnika)
     czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
     czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
     #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
     return czlon1, czlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
-        rodzenstwo = getSiblings(spójnik, parent_map, children_map)
-        dlugoscCzlon1 = getWordCount(rodzenstwo[0], root)
-        dlugoscCzlon2 = getWordCount(rodzenstwo[1], root)
-        #print(dlugoscCzlon1, dlugoscCzlon2)
-        czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root), root.find("text").text)
-        czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root), root.find("text").text)
-       # print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
-
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
             return tab
+        #print(spójnik.attrib)
+        rodzenstwo = getSiblings(spójnik, parent_map, children_map)
+        if int(rodzenstwo[0].get("from")) > int(rodzenstwo[1].get("from")):
+            rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
+        dlugoscCzlon1 = getWordCount(rodzenstwo[0], root, parent_map)
+        dlugoscCzlon2 = getWordCount(rodzenstwo[1], root, parent_map)
+        czyKoniecZdania = False
+        if int(rodzenstwo[1].get("to")) + 1 == int(root.find("startnode").get("to")):
+            czyKoniecZdania = True
 
-        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map), czlon1, czlon2)
-      #  print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
-       # if len(czlon1) != dlugoscCzlon1 or len(czlon2) != dlugoscCzlon2:
-        #    czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon2, dlugoscCzlon1, root, getSpojnikValue(spójnik, children_map))
-         #   rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
-            #print(czlon1, czlon2)
+        #print(rodzenstwo[0].attrib)
+        #print(rodzenstwo[1].attrib)
+        #print("rodz0: " + getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root), root.find("text").text)
+        #print("rodz1:" + getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root), root.find("text").text)
+        czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root, parent_map), root.find("text").text, root, False)
+        czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root, parent_map), root.find("text").text, root, czyKoniecZdania)
+        #print(f"czlon1sortuj: {czlon1}\nczlon2sortuj: {czlon2}")
+
+        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map), czlon1, czlon2, spójnik.get("from"))
         czlon1 = " ".join(czlon1)
         czlon2 = " ".join(czlon2)
-
-       # print(f"1: {czlon1}\n2: {czlon2}")
-        """czlon1 = ''
-        czlon2 = ''
-        for i in getCzlon(rodzenstwo[0], root):
-            if i != " ":
-                czlon1 += i
-            else:
-                break
-        for i in getCzlon(rodzenstwo[1], root):
-            if i != " ":
-                czlon2 += i
-            else:
-                break
-        czlony = [czlon1, czlon2]
-        czlony = sortuj(czlony, root.find("text").text)
-        if czlon1 == czlony[1]:
-            rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
-        print(czlony)"""
+        print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0]:
             tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
@@ -298,28 +304,29 @@ def writeToFile(tab):
             writer = csv.DictWriter(f, fieldnames=header)
             if puste:
                 writer.writeheader()
-            writer.writerow({"Pozycja Nadrzędnika": tab[0][0],
-                             "Nadrzędnik": tab[0][1],
-                             "Tag Nadrzędnika": tab[0][2],
-                             "Kategoria Nadrzędnika": tab[0][3],
-                             "Kategoria Rodzica Nadrzędnika": tab[0][4],
-                             "Spójnik": tab[0][5],
-                             "Tag Spójnika": tab[0][6],
-                             "Kategoria Koordynacji": tab[0][7],
-                             "Kategoria Rodzica Koordynacji": tab[0][8],
-                             "Słowa Pierwszego Członu": tab[0][9],
-                             "Sylaby Pierwszego Członu": tab[0][10],
-                             "Znaki Pierwszego Członu": tab[0][11],
-                             "Pierwszy Człon": tab[0][12],
-                             "Kategoria Pierwszego Członu": tab[0][13],
-                             "Słowa Drugiego Członu": tab[0][14],
-                             "Sylaby Drugiego Członu": tab[0][15],
-                             "Znaki Drugiego Członu": tab[0][16],
-                             "Drugi Człon": tab[0][17],
-                             "Kategoria Drugiego Członu": tab[0][18],
-                             "Całe Zdanie": tab[0][19],
-                             "Sent_id": tab[0][20]
-                             })
+            for i in range(len(tab)):
+                writer.writerow({"Pozycja Nadrzędnika": tab[i][0],
+                                 "Nadrzędnik": tab[i][1],
+                                 "Tag Nadrzędnika": tab[i][2],
+                                 "Kategoria Nadrzędnika": tab[i][3],
+                                 "Kategoria Rodzica Nadrzędnika": tab[i][4],
+                                 "Spójnik": tab[i][5],
+                                 "Tag Spójnika": tab[i][6],
+                                 "Kategoria Koordynacji": tab[i][7],
+                                 "Kategoria Rodzica Koordynacji": tab[i][8],
+                                 "Słowa Pierwszego Członu": tab[i][9],
+                                 "Sylaby Pierwszego Członu": tab[i][10],
+                                 "Znaki Pierwszego Członu": tab[i][11],
+                                 "Pierwszy Człon": tab[i][12],
+                                 "Kategoria Pierwszego Członu": tab[i][13],
+                                 "Słowa Drugiego Członu": tab[i][14],
+                                 "Sylaby Drugiego Członu": tab[i][15],
+                                 "Znaki Drugiego Członu": tab[i][16],
+                                 "Drugi Człon": tab[i][17],
+                                 "Kategoria Drugiego Członu": tab[i][18],
+                                 "Całe Zdanie": tab[i][19],
+                                 "Sent_id": tab[i][20]
+                                 })
             writer.writerow({})
             writer.writerow({})
 
@@ -328,7 +335,10 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #path = ["../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
+    path = ["../Składnica-frazowa-200319/NKJP_1M_2002000082/morph_3-p/morph_3.62-s.xml"]
+    #NKJP_1M_1305000001001/morph_1-p/morph_1.41-s
+    #NKJP_1M_1202000010/morph_98-p/morph_98.47-s
+    # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
         #"../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
         #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
@@ -338,10 +348,10 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-    #for i in path:
-     #   openFile(i)
+    for i in path:
+        openFile(i)
 
-    i = 0
+    """i = 0
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
@@ -351,12 +361,12 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<1000:
+                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<200:
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
                     czyKolejnyFolder = False
-                    i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
+                    i += 1""" #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
 def openFile(path):
     with open(path, "r"):
         writeToFile(analizeFile(path))
@@ -365,9 +375,8 @@ def czyDrzewoFull(root):
 def analizeFile(path):
     parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
     children_map = {}
-    informacje = [None] * 21
-    wyniki = []
     #print(path)
+    wyniki = []
     tree = ET.parse(path)
     root = tree.getroot()
     if czyDrzewoFull(root):
@@ -380,12 +389,20 @@ def analizeFile(path):
         for k, v in parent_map.items():
             children_map[v] = children_map.get(v, []) + [k]
 
-        spojniki = getSpojniki(parent_map)
+        spojniki = getSpojniki(parent_map, root)
+        #spojnikiValues = []
+        #for i in spojniki:
+        #    spojnikiValues.append(getSpojnikValue(i, children_map))
+        #if len(set(spojnikiValues)) != len(spojnikiValues):
+        #   for i in spojnikiValues:
+        #       if spojnikiValues.count(i) > 1:
+        #            indexes = [index for index, element in enumerate(root.find("text").text.split()) if element == i]
         if spojniki != []:
             for x in spojniki:
                 #setInfo(informacje, root, x)
                 if len(getSiblings(x, parent_map, children_map)) == 2:
                     #print(getSiblings(x, parent_map, children_map))
+                    informacje = [None] * 21
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map)))
     return wyniki
 #filePath = '../Składnica-frazowa-200319/NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml'
