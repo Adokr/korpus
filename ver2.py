@@ -47,8 +47,9 @@ def getSiblings(node, parent_map, children_map):
     rozne_wyniki.discard(getParent(node, parent_map))
     xd = []
     for x in rozne_wyniki:
-        if x.get("nid") != node.get("nid"):
+        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text != "znakkonca":
             xd.append(x)
+
     return xd
 
 def getSpojnikValue(node, children_map):
@@ -113,8 +114,9 @@ def findNode(nid, root):
         if x.get("nid") == str(nid):
             return x
 
-def getNadrzednik(node, root, parent_map):
-    return findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(node, root, parent_map), parent_map), root)
+def getNadrzednik(node, root, parent_map, children_map):
+    nadrzednik = findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(node, root, parent_map), parent_map), root)
+    return nadrzednik
 def getPozycjaNadrzednika(nodeNadrzednik, nodeSpojnik, root):
     tab = root.find("text").text.split()
     czyZnalazles = False
@@ -164,16 +166,19 @@ def getCzlon(node, root):
     return wyniki"""
 def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik):
     caleZdanie = root.find("text").text
+    #print(f"s: {spójnik}")
     gdzieSpojnik = caleZdanie.split().index(spójnik)
     #print(dlCzlon1, dlCzlon2)
-    czlon1 = caleZdanie.split()[caleZdanie.split().index(spójnik)-dlCzlon1:caleZdanie.split().index(spójnik)]
-    czlon2 = caleZdanie.split()[caleZdanie.split().index(spójnik)+1: caleZdanie.split().index(spójnik)+dlCzlon2+1]
+    czlon1 = caleZdanie.split()[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
+    czlon2 = caleZdanie.split()[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
     #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
     return czlon1, czlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         rodzenstwo = getSiblings(spójnik, parent_map, children_map)
         dlugoscCzlon1 = getWordCount(rodzenstwo[0], root)
         dlugoscCzlon2 = getWordCount(rodzenstwo[1], root)
+        if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
+            return tab
         czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map))
         #print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
         if len(czlon1) != dlugoscCzlon1 or len(czlon2) != dlugoscCzlon2:
@@ -182,14 +187,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
             #print(czlon1, czlon2)
         czlon1 = " ".join(czlon1)
         czlon2 = " ".join(czlon2)
-        print(czlon1, czlon2)
-        if list(czlon2.split()[-1])[-1] in [".", "?","!"]:
-            #lul = list(czlon2.split()[-1])[0:-1]
-            #print("".join(lul))
+        if list(czlon2.split()[-1])[-1] in [".", "?","!", ","]:
             czlon2 = czlon2[0:-1]
-            #print(czlon2)
-            #czlon2 = czlon2.join(lul)
-        print(czlon2)
 
         """czlon1 = ''
         czlon2 = ''
@@ -208,11 +207,14 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         if czlon1 == czlony[1]:
             rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
         print(czlony)"""
-        tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
-        tab[1] = getNadrzednik(spójnik, root, parent_map).find('terminal').find('orth').text
-        tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map), parent_map), children_map)
-        tab[3] = getKategoriaNadrzednika(getNadrzednik(spójnik, root, parent_map), parent_map)
-        tab[4] = getKategoriaNadrzednika(getParent(getNadrzednik(spójnik, root, parent_map), parent_map), parent_map)
+        if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0]:
+            tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
+            tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
+            tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), children_map)
+            tab[3] = getKategoriaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map), parent_map)
+            tab[4] = getKategoriaNadrzednika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), parent_map)
+        else:
+            tab[0] = 0
         tab[5] = getSpojnikValue(spójnik, children_map)
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
@@ -287,7 +289,7 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    path = ["../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
+    """path = ["../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
             "../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
 "../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
 "../Składnica-frazowa-200319/NKJP_1M_1202000009/morph_196-p/morph_196.14-s.xml",
@@ -298,7 +300,8 @@ def main():
 "../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
     for i in path:
         openFile(i)
-    """i = 0
+    """
+    i = 0
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
@@ -308,12 +311,12 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml":
+                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<100:
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
                     czyKolejnyFolder = False
-                    i += 1""" #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
+                    i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
 def openFile(path):
     with open(path, "r"):
         writeToFile(analizeFile(path))
@@ -371,7 +374,9 @@ main()
 
 ### ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_6-p/morph_6.9-s.xml co tu co koordynuje 121 wiersz w .csv
 #../Składnica-frazowa-200319/NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml    brak nadrzędnika?
-
+# NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml <- przerwa w szarym??? złe drzewo chyba
+#NKJP_1M_1102000000027/morph_2-p/morph_2.63-s.xml <- czy dobry nadrzędnik
+# NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml <- czy dobry nadrzędnik? czy może nie powinno go nie ma
 
 """
 NKJP_1M_2002000131/morph_2-p/morph_2.20-s
