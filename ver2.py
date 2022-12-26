@@ -158,38 +158,77 @@ def getCzlon(node, root):
     a = " ".join(wynik)
     #print(a)
     return a
-"""def sortuj(doPosortowania, wgTegoSortuj):
-    wgTegoSortuj = wgTegoSortuj[0:-1] # usuwanie znaku interpunkcyjnego
-    klucz = {c: i for i, c in enumerate(wgTegoSortuj.split())}
+def sortuj(doPosortowania, wgTegoSortuj):
+    lepszeWgTegoSortuj = []
+    lepszeDoPosortowania = []
+    for i in wgTegoSortuj.split():
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+            k = copy.deepcopy(i[-1])
+            i = i[0:-1]
+            lepszeWgTegoSortuj.append(i)
+            lepszeWgTegoSortuj.append(k)
+        else:
+            lepszeWgTegoSortuj.append(i)
+    for i in doPosortowania.split():
+        if list(i.split()[-1]) in [".", "?", "!", ",", ";"]:
+            i = i[0:-1]
+        lepszeDoPosortowania.append(i)
+    print(lepszeWgTegoSortuj)
+    print(lepszeDoPosortowania)
+
+    #wgTegoSortuj = wgTegoSortuj[0:-1] # usuwanie znaku interpunkcyjnego
+    klucz = {c: i for i, c in enumerate(lepszeWgTegoSortuj)}
     #print(klucz)
-    wyniki = sorted(doPosortowania, key=klucz.get)
-    return wyniki"""
-def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik):
+    wyniki = sorted(lepszeDoPosortowania, key=klucz.get)
+    return wyniki
+def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2):
     caleZdanie = root.find("text").text
+    lepszeCaleZdanie = []
+    for i in caleZdanie.split():
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+            k = copy.deepcopy(i[-1])
+            i = i[0:-1]
+            lepszeCaleZdanie.append(i)
+            lepszeCaleZdanie.append(k)
+        else:
+            lepszeCaleZdanie.append(i)
+    k = 0
+    for i in range(len(czlon1)):
+        for j in range(len(czlon2)):
+            if lepszeCaleZdanie.index(czlon2[j]) < lepszeCaleZdanie.index(czlon1[i]):
+                k += 1
+    if k == dlCzlon1 * dlCzlon2:
+        dlCzlon1, dlCzlon2 = dlCzlon2, dlCzlon1
     #print(f"s: {spójnik}")
-    gdzieSpojnik = caleZdanie.split().index(spójnik)
-    #print(dlCzlon1, dlCzlon2)
-    czlon1 = caleZdanie.split()[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
-    czlon2 = caleZdanie.split()[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
+    #print(lepszeCaleZdanie)
+    gdzieSpojnik = lepszeCaleZdanie.index(spójnik)
+
+    czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
+    czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
     #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
     return czlon1, czlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         rodzenstwo = getSiblings(spójnik, parent_map, children_map)
         dlugoscCzlon1 = getWordCount(rodzenstwo[0], root)
         dlugoscCzlon2 = getWordCount(rodzenstwo[1], root)
+        #print(dlugoscCzlon1, dlugoscCzlon2)
+        czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root), root.find("text").text)
+        czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root), root.find("text").text)
+       # print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
+
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
             return tab
-        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map))
-        #print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
-        if len(czlon1) != dlugoscCzlon1 or len(czlon2) != dlugoscCzlon2:
-            czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon2, dlugoscCzlon1, root, getSpojnikValue(spójnik, children_map))
-            rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
+
+        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map), czlon1, czlon2)
+      #  print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
+       # if len(czlon1) != dlugoscCzlon1 or len(czlon2) != dlugoscCzlon2:
+        #    czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon2, dlugoscCzlon1, root, getSpojnikValue(spójnik, children_map))
+         #   rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
             #print(czlon1, czlon2)
         czlon1 = " ".join(czlon1)
         czlon2 = " ".join(czlon2)
-        if list(czlon2.split()[-1])[-1] in [".", "?","!", ","]:
-            czlon2 = czlon2[0:-1]
 
+       # print(f"1: {czlon1}\n2: {czlon2}")
         """czlon1 = ''
         czlon2 = ''
         for i in getCzlon(rodzenstwo[0], root):
@@ -289,18 +328,19 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    """path = ["../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
-            "../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_1202000009/morph_196-p/morph_196.14-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_2002000176/morph_5-p/morph_5.62-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_2004000005/morph_8-p/morph_8.81-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
-"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-    for i in path:
-        openFile(i)
-    """
+    #path = ["../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
+        #"../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
+        #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_1103000012/morph_1-p/morph_1.26-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_1202000009/morph_196-p/morph_196.14-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_2002000176/morph_5-p/morph_5.62-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_2004000005/morph_8-p/morph_8.81-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
+#"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
+    #for i in path:
+     #   openFile(i)
+
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
@@ -311,7 +351,7 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<100:
+                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<1000:
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
