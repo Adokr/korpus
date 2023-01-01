@@ -103,7 +103,7 @@ def findTerminalAttributes(node, root, wynik, parent_map):
                             z = z[0]
                         wynik.append(z)
     else:
-        if getParent(a, parent_map).find("nonterminal").find("category").text != "przec":
+        if getParent(a, parent_map).find("nonterminal").find("category").text not in ["przec", "cudz"]:
             wynik.append(node)
     #print("wynik:")
     #for x in wynik:
@@ -251,7 +251,7 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     #gdzieSpojnik = lepszeCaleZdanie.index(spójnik)
     #print(gdzieSpojnik)
     gdzieSpojnik = int(indeksSpojnika)
-    #print(gdzieSpojnik)
+    print(gdzieSpojnik)
     czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
     czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
     print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
@@ -259,21 +259,34 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     ileZnakowInter2 = 0
     lepszyCzlon1 = copy.deepcopy(czlon1)
     lepszyCzlon2 = copy.deepcopy(czlon2)
+    lol = 0
     for i in range(len(czlon1)):
         if czlon1[i] in [",", ".", ";", '"']:
             ileZnakowInter1 += 1
-            lepszyCzlon1[i-1] = lepszyCzlon1[i-1] + lepszyCzlon1[i]
-            lepszyCzlon1.pop(i)
+            if i == 0:
+                lepszyCzlon1[i] = lepszyCzlon1[i] + lepszyCzlon1[i+1]
+                lepszyCzlon1.pop(i+1-lol)
+                lol += 1
+            else:
+                lepszyCzlon1[i-1-lol] = lepszyCzlon1[i-1-lol] + lepszyCzlon1[i-lol]
+                lepszyCzlon1.pop(i-lol)
+                lol += 1
     for i in range(ileZnakowInter1):
-        lepszyCzlon1.append(lepszeCaleZdanie[gdzieSpojnik+i])
+        lepszyCzlon1.insert(i, caleZdanie.split()[gdzieSpojnik+i-(len(lepszeCaleZdanie)-len(caleZdanie.split()))])
+    lol = 0
     for i in range(len(czlon2)):
         if czlon2[i] in [",", ".", ";", '"']:
             ileZnakowInter2 += 1
-            lepszyCzlon2[i - 1] = lepszyCzlon2[i - 1] + lepszyCzlon2[i]
-            lepszyCzlon2.pop(i)
+            if i == 0:
+                lepszyCzlon2[i] = lepszyCzlon2[i] + lepszyCzlon2[i + 1]
+                lepszyCzlon2.pop(i + 1)
+                lol += 1
+            else:
+                lepszyCzlon2[i - 1- lol] = lepszyCzlon2[i - 1- lol] + lepszyCzlon2[i-lol]
+                lepszyCzlon2.pop(i - lol)
     for i in range(ileZnakowInter2):
-        lepszyCzlon2.append(lepszeCaleZdanie[gdzieSpojnik+dlCzlon2+i+1])
-    print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
+        lepszyCzlon2.append(caleZdanie.split()[gdzieSpojnik - len(lepszeCaleZdanie) + len(caleZdanie.split())])
+    print(f"funckja lepszyczlon1: {lepszyCzlon1}\nlepszyczlon2: {lepszyCzlon2}")
     return lepszyCzlon1, lepszyCzlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
@@ -284,6 +297,7 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
             rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
         dlugoscCzlon1 = getWordCount(rodzenstwo[0], root, parent_map)
         dlugoscCzlon2 = getWordCount(rodzenstwo[1], root, parent_map)
+        print(dlugoscCzlon1,dlugoscCzlon2)
         #print(rodzenstwo[0].attrib)
         #print(rodzenstwo[1].attrib)
         #czyKoniecZdania = False
@@ -408,8 +422,8 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-   # for i in path:
-    #    openFile(i)
+    #for i in path:
+     #   openFile(i)
 
     with open("./data.csv", "w", newline=''):
         print("")
