@@ -167,11 +167,35 @@ def getCzlon(node, root, parent_map):
     a = " ".join(wynik)
     #print(a)
     return a
+def czyTylkoPojedynczeGlowy(root):
+    ileTakich = 0
+    zbiory = []
+    for i in root.iter("node"):
+        if i.get("chosen") == "true":
+            for j in i.iter("children"):
+                if j.get("chosen") == "true":
+                    count = 0
+                    tab = []
+                    for k in j.iter("child"):
+                        if k.get("head") == "true":
+                            count += 1
+                            tab.append(k.get("nid"))
+                    if count > 1:
+                        ileTakich += 1
+                        zbiory.append(tab)
+    return ileTakich == 0, zbiory
+
+def podwojneGlowyWCzlonieKoordynacji(nodeCzlonu, nodePodwojnejGlowy, root, parent_map):
+    for i in nodePodwojnejGlowy:
+        if findNode(i, root) in findTerminalAttributes(nodeCzlonu, root, [], parent_map):
+            return True
+    return False
+
 def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     lepszeWgTegoSortuj = []
     lepszeDoPosortowania = []
     for i in wgTegoSortuj.split():
-        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";", '"']:
             k = copy.deepcopy(i[-1])
             i = i[0:-1]
             lepszeWgTegoSortuj.append(i)
@@ -179,7 +203,7 @@ def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
         else:
             lepszeWgTegoSortuj.append(i)
     for i in doPosortowania.split():
-        if list(i.split()[-1]) in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1]) in [".", "?", "!", ",", ";", '"']:
             i = i[0:-1]
         lepszeDoPosortowania.append(i)
     #print(lepszeWgTegoSortuj)
@@ -200,17 +224,23 @@ def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     klucz = {c: i for i, c in enumerate(lepszeWgTegoSortuj)}
     wyniki = sorted(lepszeDoPosortowania, key=klucz.get)
     return wyniki
-def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2, indeksSpojnika):
+def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     caleZdanie = root.find("text").text
     lepszeCaleZdanie = []
     for i in caleZdanie.split():
-        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";"]:
+        if list(i.split()[-1])[-1] in [".", "?", "!", ",", ";", '"']:
             k = copy.deepcopy(i[-1])
             i = i[0:-1]
             lepszeCaleZdanie.append(i)
             lepszeCaleZdanie.append(k)
+        elif list(i.split()[-1])[0] in ['"']:
+            k = copy.deepcopy(i[0])
+            i = i[1:]
+            lepszeCaleZdanie.append(k)
+            lepszeCaleZdanie.append(i)
         else:
             lepszeCaleZdanie.append(i)
+
     """k = 0
     for i in range(len(czlon1)):
         for j in range(len(czlon2)):
@@ -218,15 +248,35 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, spójnik, czlon1, czlon2, ind
                 k += 1
     if k == dlCzlon1 * dlCzlon2:
         dlCzlon1, dlCzlon2 = dlCzlon2, dlCzlon1"""
+
     #print(f"s: {spójnik}")
-    #print(lepszeCaleZdanie)
     #gdzieSpojnik = lepszeCaleZdanie.index(spójnik)
     #print(gdzieSpojnik)
     gdzieSpojnik = int(indeksSpojnika)
+    #print(gdzieSpojnik)
     czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
     czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
-    #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
-    return czlon1, czlon2
+    print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
+    ileZnakowInter1 = 0
+    ileZnakowInter2 = 0
+    lepszyCzlon1 = copy.deepcopy(czlon1)
+    lepszyCzlon2 = copy.deepcopy(czlon2)
+    for i in range(len(czlon1)):
+        if czlon1[i] in [",", ".", ";", '"']:
+            ileZnakowInter1 += 1
+            lepszyCzlon1[i-1] = lepszyCzlon1[i-1] + lepszyCzlon1[i]
+            lepszyCzlon1.pop(i)
+    for i in range(ileZnakowInter1):
+        lepszyCzlon1.append(lepszeCaleZdanie[gdzieSpojnik+i])
+    for i in range(len(czlon2)):
+        if czlon2[i] in [",", ".", ";", '"']:
+            ileZnakowInter2 += 1
+            lepszyCzlon2[i - 1] = lepszyCzlon2[i - 1] + lepszyCzlon2[i]
+            lepszyCzlon2.pop(i)
+    for i in range(ileZnakowInter2):
+        lepszyCzlon2.append(lepszeCaleZdanie[gdzieSpojnik+dlCzlon2+i+1])
+    print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
+    return lepszyCzlon1, lepszyCzlon2
 def setInfo(tab, root, spójnik, parent_map, children_map):
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
             return tab
@@ -236,22 +286,29 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
             rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
         dlugoscCzlon1 = getWordCount(rodzenstwo[0], root, parent_map)
         dlugoscCzlon2 = getWordCount(rodzenstwo[1], root, parent_map)
-        czyKoniecZdania = False
-        if int(rodzenstwo[1].get("to")) + 1 == int(root.find("startnode").get("to")):
-            czyKoniecZdania = True
-
         #print(rodzenstwo[0].attrib)
         #print(rodzenstwo[1].attrib)
+        #czyKoniecZdania = False
         #print("rodz0: " + getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root), root.find("text").text)
         #print("rodz1:" + getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root), root.find("text").text)
-        czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root, parent_map), root.find("text").text, root, False)
-        czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root, parent_map), root.find("text").text, root, czyKoniecZdania)
+        #czlon1 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map), root, parent_map), root.find("text").text, root, False)
+        #czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root, parent_map), root.find("text").text, root, czyKoniecZdania)
         #print(f"czlon1sortuj: {czlon1}\nczlon2sortuj: {czlon2}")
-
-        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, getSpojnikValue(spójnik, children_map), czlon1, czlon2, spójnik.get("from"))
+     #   print(podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][0], root, parent_map))
+        whereSpójnik = int(spójnik.get("from"))
+        if not czyTylkoPojedynczeGlowy(root)[0]:
+            for i in range(len(czyTylkoPojedynczeGlowy(root)[1])):
+                if int(findNode(czyTylkoPojedynczeGlowy(root)[1][i][0], root).get("from")) < int(spójnik.get("from")):
+                    whereSpójnik -= 1
+                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+                        dlugoscCzlon1 -= 1
+                else:
+                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[1], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+                        dlugoscCzlon2 -= 1
+        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, whereSpójnik)
         czlon1 = " ".join(czlon1)
         czlon2 = " ".join(czlon2)
-        print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
+        #print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0]:
             tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
@@ -335,7 +392,12 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    path = ["../Składnica-frazowa-200319/NKJP_1M_2002000082/morph_3-p/morph_3.62-s.xml"]
+    #path = ["../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
+            #"../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
+    # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
+    # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
+            #../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
+            #../Składnica-frazowa-200319/NKJP_1M_2002000082/morph_3-p/morph_3.62-s.xml"]
     #NKJP_1M_1305000001001/morph_1-p/morph_1.41-s
     #NKJP_1M_1202000010/morph_98-p/morph_98.47-s
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
@@ -348,10 +410,9 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-    for i in path:
-        openFile(i)
+   # for i in path:
+    #    openFile(i)
 
-    """i = 0
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
@@ -361,12 +422,12 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<200:
+                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<300:
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
                     czyKolejnyFolder = False
-                    i += 1""" #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
+                    i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
 def openFile(path):
     with open(path, "r"):
         writeToFile(analizeFile(path))
