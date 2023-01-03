@@ -224,6 +224,61 @@ def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     klucz = {c: i for i, c in enumerate(lepszeWgTegoSortuj)}
     wyniki = sorted(lepszeDoPosortowania, key=klucz.get)
     return wyniki
+def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
+    rodzenstwoSpojnika = getSiblings(spójnik, parent_map, children_map)
+    czlon1 = rodzenstwoSpojnika[0]
+    czlon2 = rodzenstwoSpojnika[1]
+    if int(rodzenstwoSpojnika[0].get("from")) > int(rodzenstwoSpojnika[1].get("from")):
+        czlon1 = rodzenstwoSpojnika[1]
+        czlon2 = rodzenstwoSpojnika[0]
+
+    indeksyCzlon1 = list(range(int(czlon1.get("from")), int(czlon1.get("to"))))
+    indeksyCzlon2 = list(range(int(czlon2.get("from")), int(czlon2.get("to"))))
+    glowi = []
+    glowi2 = []
+    if not czyTylkoPojedynczeGlowy(root)[0]:
+        podwojneGlowy = czyTylkoPojedynczeGlowy(root)[1]
+        for i in podwojneGlowy:
+            for j in i:
+                glowi.append(j)
+        for i in podwojneGlowy:
+            glowi2.append(i[0])
+    print(glowi)
+    slowaCzlon1 = []
+    slowaCzlon2 = []
+    tmp = []
+    for i in indeksyCzlon1:
+        for j in root.findall("node"):
+            if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i+1:
+                if j.find("terminal") is not None:
+                    if j.get("nid") not in glowi:
+                        slowaCzlon1.append(j.find("terminal").find("orth").text)
+                    elif j.get("nid") in glowi2:
+                        for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
+                            tmp.append(k.find("terminal").find("orth").text)
+                        slowo = "".join(tmp)
+                        print(tmp)
+                        slowaCzlon1.append(slowo)
+                        tmp = []
+    for i in indeksyCzlon2:
+        for j in root.findall("node"):
+            if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i + 1:
+                if j.find("terminal") is not None:
+                    if j.get("nid") not in glowi:
+                        slowaCzlon2.append(j.find("terminal").find("orth").text)
+                    elif j.get("nid") in glowi2:
+                        for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
+                            tmp.append(k.find("terminal").find("orth").text)
+                        slowo = "".join(tmp)
+                        print(tmp)
+                        slowaCzlon2.append(slowo)
+                        tmp = []
+
+    a1 = " ".join(slowaCzlon1)
+    a2 = " ".join(slowaCzlon2)
+    return a1, a2
+
+
 def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     caleZdanie = root.find("text").text
     lepszeCaleZdanie = []
@@ -305,10 +360,12 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
                 else:
                     if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[1], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
                         dlugoscCzlon2 -= 1
-        czlon1, czlon2 = getCzlonyKoordynacji(dlugoscCzlon1, dlugoscCzlon2, root, whereSpójnik)
-        czlon1 = " ".join(czlon1)
-        czlon2 = " ".join(czlon2)
-        #print(f"czlon1: {czlon1}\nczlon2: {czlon2}")
+        czlon1, czlon2 = getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map)
+       # print(f"1: {len(czlon1)}\n2: {len(czlon2)}")
+        print(f"1: {czlon1}\n2: {czlon2}")
+        #czlon1 = " ".join(czlon1)
+        #czlon2 = " ".join(czlon2)
+        print(f"czlon1: {dlugoscCzlon1}\nczlon2: {dlugoscCzlon2}")
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0]:
             tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
