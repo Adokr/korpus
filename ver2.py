@@ -466,27 +466,6 @@ def analizeFile(path):
                     informacje = [None] * 21
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map)))
     return wyniki
-#filePath = '../Składnica-frazowa-200319/NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml'
-#tree = ET.parse(filePath)
-#root = tree.getroot()
-#node_root = root.find('node')
-#assert node_root.get('nid') == '0'
-#parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
-#children_map = {}
-#informacje = [None] * 20
-#wyniki = []
-
-#parent_map[node_root] = node_root
-#getActuallTree(root)  # nid = 0 to zawsze korzeń
-#for k, v in parent_map.items():
-   # children_map[v] = children_map.get(v, []) + [k]
-
-#spojniki = getSpojniki()
-#for x in spojniki:
- #   setInfo()
-  #  print(getSpojnikValue(x))
-   # wyniki.append(copy.deepcopy(informacje))
-
 
 main()
 
