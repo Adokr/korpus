@@ -276,9 +276,45 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
 
     a1 = " ".join(slowaCzlon1)
     a2 = " ".join(slowaCzlon2)
+    print(a1)
+    a1 = ogarnijInterpunkcje(a1)
+    a2 = ogarnijInterpunkcje(a2)
     return a1, a2
-
-
+def ogarnijInterpunkcje(czlon):
+    wynik = []
+    czyCudzyslowOtwarty = False
+    for i in czlon.split():
+        if i == "," and wynik != []:
+            tmp = wynik[-1]
+            del wynik[-1]
+            tmp += ","
+            wynik.append(tmp)
+        else:
+            wynik.append(i)
+    if '"' in wynik:
+        tmpCzlon = []
+        przeskok = False
+        for i in range(len(wynik)):
+            if not przeskok:
+                if wynik[i] == '"' and not czyCudzyslowOtwarty:
+                    tmp = wynik[i]
+                    tmp += wynik[i+1]
+                    tmpCzlon.append(tmp)
+                    przeskok = True
+                    czyCudzyslowOtwarty = True
+                elif wynik[i] == '"':
+                    tmp = tmpCzlon[-1]
+                    del tmpCzlon[-1]
+                    tmp += '"'
+                    tmpCzlon.append(tmp)
+                    czyCudzyslowOtwarty = False
+                else:
+                    tmpCzlon.append(wynik[i])
+            else:
+                przeskok = False
+        #print(f"lol: {tmpCzlon}")
+        wynik = tmpCzlon
+    return " ".join(wynik)
 def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     caleZdanie = root.find("text").text
     lepszeCaleZdanie = []
@@ -332,6 +368,18 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
         lepszyCzlon2.append(lepszeCaleZdanie[gdzieSpojnik+dlCzlon2+i+1])
     print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
     return lepszyCzlon1, lepszyCzlon2
+def czyPrzerwaWSzarym(node, root, parent_map, children_map):
+    wynik = True
+    if getNadrzednik(node, root, parent_map, children_map).find("terminal") is None:
+        for i in getNadrzednik(node, root, parent_map, children_map).iter("children"):
+            if i.get("chosen") == "true":
+                for j in i.iter("child"):
+                    if j.get("head") == "true":
+                        wynik = False
+    else:
+        wynik = False
+    print(f"Czy przerwa w szarym: {wynik}")
+    return wynik
 def setInfo(tab, root, spójnik, parent_map, children_map):
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
             return tab
@@ -365,8 +413,9 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         print(f"1: {czlon1}\n2: {czlon2}")
         #czlon1 = " ".join(czlon1)
         #czlon2 = " ".join(czlon2)
-        print(f"czlon1: {dlugoscCzlon1}\nczlon2: {dlugoscCzlon2}")
-        if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0]:
+        #print(f"czlon1: {dlugoscCzlon1}\nczlon2: {dlugoscCzlon2}")
+        if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
+            print(getNadrzednik(spójnik, root, parent_map, children_map).get("nid"))
             tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
             tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), children_map)
@@ -479,7 +528,7 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_53.61-s.xml" and i<300:
+                if filename != ".xml" and i<1000: #filename != "morph_53.61-s.xml"
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
@@ -529,9 +578,12 @@ main()
 ### ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_6-p/morph_6.9-s.xml co tu co koordynuje 121 wiersz w .csv
 #../Składnica-frazowa-200319/NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml    brak nadrzędnika?
 # NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml <- przerwa w szarym??? złe drzewo chyba
+#NKJP_1M_0302000000011/morph_12-p/morph_12.66-s.xml <- to co wyżej
+
 #NKJP_1M_1102000000027/morph_2-p/morph_2.63-s.xml <- czy dobry nadrzędnik
 # NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml <- czy dobry nadrzędnik? czy może nie powinno go nie ma
-
+#NKJP_1M_2002000160/morph_4-p/morph_4.61-s <- kolumny sue przestawiają
+#NKJP_1M_2002000160/morph_4-p/morph_4.38-s to co wyżej
 """
 NKJP_1M_2002000131/morph_2-p/morph_2.20-s
 NKJP_1M_1303900001/morph_314-p/morph_314.49-s
