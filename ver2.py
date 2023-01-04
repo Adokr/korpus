@@ -228,6 +228,17 @@ def sortuj(doPosortowania, wgTegoSortuj, root, czyKoniecZdania):
     klucz = {c: i for i, c in enumerate(lepszeWgTegoSortuj)}
     wyniki = sorted(lepszeDoPosortowania, key=klucz.get)
     return wyniki
+def posortuj(tab):
+    kolejnosc = []
+    lepszakolejnosc = []
+    wynik = [None] * len(tab)
+    for i in tab:
+        kolejnosc.append(int(i.get("from")))
+    for i in kolejnosc:
+        lepszakolejnosc.append(i - (max(kolejnosc) - 1))
+    for i in range(len(tab)):
+        wynik[lepszakolejnosc[i]] = tab[i].find("terminal").find("orth").text
+    return wynik
 def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
     rodzenstwoSpojnika = getSiblings(spójnik, parent_map, children_map)
     czlon1 = rodzenstwoSpojnika[0]
@@ -251,6 +262,7 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
     slowaCzlon1 = []
     slowaCzlon2 = []
     tmp = []
+    kolejnosc = []
     for i in indeksyCzlon1:
         for j in root.findall("node"):
             if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i+1:
@@ -259,11 +271,13 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         slowaCzlon1.append(j.find("terminal").find("orth").text)
                     elif j.get("nid") in glowi2:
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
-                            tmp.append(k.find("terminal").find("orth").text)
+                            #tmp.append(k.find("terminal").find("orth").text)
+                            kolejnosc.append(k)
+                        tmp = posortuj(kolejnosc)
                         slowo = "".join(tmp)
-                        #print(tmp)
                         slowaCzlon1.append(slowo)
                         tmp = []
+                        kolejnosc = []
     for i in indeksyCzlon2:
         for j in root.findall("node"):
             if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i + 1:
@@ -272,11 +286,14 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         slowaCzlon2.append(j.find("terminal").find("orth").text)
                     elif j.get("nid") in glowi2:
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
-                            tmp.append(k.find("terminal").find("orth").text)
+                            #tmp.append(k.find("terminal").find("orth").text)
+                            kolejnosc.append(k)
+                        tmp = posortuj(kolejnosc)
                         slowo = "".join(tmp)
                         #print(tmp)
                         slowaCzlon2.append(slowo)
                         tmp = []
+                        kolejnosc = []
 
     a1 = " ".join(slowaCzlon1)
     a2 = " ".join(slowaCzlon2)
@@ -503,7 +520,8 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-   # path = ["../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
+    #path = ["../Składnica-frazowa-200319/NKJP_1M_3101000002/morph_6-p/morph_6.56-s.xml"]
+            #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
             #"../Składnica-frazowa-200319/NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml"]
     # "../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
             #"../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
@@ -524,7 +542,7 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
     #for i in path:
-     #   openFile(i)
+      #  openFile(i)
 
     with open("./data.csv", "w", newline=''):
         print("")
