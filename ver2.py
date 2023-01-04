@@ -55,7 +55,11 @@ def getSiblings(node, parent_map, children_map):
 def getSpojnikValue(node, children_map):
     return getChildren(node, children_map)[0].find('terminal').find('orth').text
 def getTagSpojnika(node, children_map):
-    return getChildren(node, children_map)[0].find('terminal').find('f').text
+    #print(node.get("nid"))
+    if getChildren(node, children_map)[0].find("terminal") is None:
+        return getChildren(getChildren(node, children_map)[0], children_map)[0].find("terminal").find('f').text
+    else:
+        return getChildren(node, children_map)[0].find('terminal').find('f').text
 def getKategoriaKoordynacji(node, parent_map, children_map):
     kategorie = []
     for x in getSiblings(node, parent_map, children_map):
@@ -243,7 +247,7 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                 glowi.append(j)
         for i in podwojneGlowy:
             glowi2.append(i[0])
-    print(glowi)
+    #print(glowi)
     slowaCzlon1 = []
     slowaCzlon2 = []
     tmp = []
@@ -257,7 +261,7 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             tmp.append(k.find("terminal").find("orth").text)
                         slowo = "".join(tmp)
-                        print(tmp)
+                        #print(tmp)
                         slowaCzlon1.append(slowo)
                         tmp = []
     for i in indeksyCzlon2:
@@ -270,13 +274,13 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             tmp.append(k.find("terminal").find("orth").text)
                         slowo = "".join(tmp)
-                        print(tmp)
+                        #print(tmp)
                         slowaCzlon2.append(slowo)
                         tmp = []
 
     a1 = " ".join(slowaCzlon1)
     a2 = " ".join(slowaCzlon2)
-    print(a1)
+    #print(a1)
     a1 = ogarnijInterpunkcje(a1)
     a2 = ogarnijInterpunkcje(a2)
     return a1, a2
@@ -347,7 +351,7 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
     #print(gdzieSpojnik)
     czlon1 = lepszeCaleZdanie[gdzieSpojnik-dlCzlon1:gdzieSpojnik]
     czlon2 = lepszeCaleZdanie[gdzieSpojnik+1:gdzieSpojnik+dlCzlon2+1]
-    print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
+    #print(f"funckja czlon1: {czlon1}\nczlon2: {czlon2}")
     ileZnakowInter1 = 0
     ileZnakowInter2 = 0
     lepszyCzlon1 = copy.deepcopy(czlon1)
@@ -366,7 +370,7 @@ def getCzlonyKoordynacji(dlCzlon1, dlCzlon2, root, indeksSpojnika):
             lepszyCzlon2.pop(i)
     for i in range(ileZnakowInter2):
         lepszyCzlon2.append(lepszeCaleZdanie[gdzieSpojnik+dlCzlon2+i+1])
-    print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
+    #print(f"funckja czlon1: {lepszyCzlon1}\nczlon2: {lepszyCzlon2}")
     return lepszyCzlon1, lepszyCzlon2
 def czyPrzerwaWSzarym(node, root, parent_map, children_map):
     wynik = True
@@ -378,7 +382,7 @@ def czyPrzerwaWSzarym(node, root, parent_map, children_map):
                         wynik = False
     else:
         wynik = False
-    print(f"Czy przerwa w szarym: {wynik}")
+    #print(f"Czy przerwa w szarym: {wynik}")
     return wynik
 def setInfo(tab, root, spójnik, parent_map, children_map):
         if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
@@ -410,14 +414,15 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
                         dlugoscCzlon2 -= 1
         czlon1, czlon2 = getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map)
        # print(f"1: {len(czlon1)}\n2: {len(czlon2)}")
-        print(f"1: {czlon1}\n2: {czlon2}")
+        #print(f"1: {czlon1}\n2: {czlon2}")
         #czlon1 = " ".join(czlon1)
         #czlon2 = " ".join(czlon2)
         #print(f"czlon1: {dlugoscCzlon1}\nczlon2: {dlugoscCzlon2}")
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
-            print(getNadrzednik(spójnik, root, parent_map, children_map).get("nid"))
+            #print(getNadrzednik(spójnik, root, parent_map, children_map).get("nid"))
             tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
+            print(tab[1])
             tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), children_map)
             tab[3] = getKategoriaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map), parent_map)
             tab[4] = getKategoriaNadrzednika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), parent_map)
@@ -498,7 +503,9 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #path = ["../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
+   # path = ["../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
+            #"../Składnica-frazowa-200319/NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml"]
+    # "../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
             #"../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
@@ -516,8 +523,8 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-   # for i in path:
-    #    openFile(i)
+    #for i in path:
+     #   openFile(i)
 
     with open("./data.csv", "w", newline=''):
         print("")
@@ -528,7 +535,7 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and i<1000: #filename != "morph_53.61-s.xml"
+                if filename != ".xml": #filename != "morph_53.61-s.xml"
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
@@ -582,8 +589,9 @@ main()
 
 #NKJP_1M_1102000000027/morph_2-p/morph_2.63-s.xml <- czy dobry nadrzędnik
 # NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml <- czy dobry nadrzędnik? czy może nie powinno go nie ma
-#NKJP_1M_2002000160/morph_4-p/morph_4.61-s <- kolumny sue przestawiają
-#NKJP_1M_2002000160/morph_4-p/morph_4.38-s to co wyżej
+#NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml <- kolumny sue przestawiają
+#NKJP_1M_2002000160/morph_4-p/morph_4.38-s.xml to co wyżej
+#NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml <- jaki nadrzędnik? 'czuwać będzie'? jeśli tak, to jaki tag nadrzędnika
 """
 NKJP_1M_2002000131/morph_2-p/morph_2.20-s
 NKJP_1M_1303900001/morph_314-p/morph_314.49-s
