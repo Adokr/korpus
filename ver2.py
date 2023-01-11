@@ -32,7 +32,7 @@ def getSpojniki(parent_map, root):
                         for z in y.iter('child'):
                             if z.get('head') == 'true' and z.get('nid') == x.get('nid'):
                                 #print(z.attrib)
-                                if len(x.find("children").findall("child")) == 1 and findNode(x.find("children").find("child").get("nid"), root).find("terminal").find("f").text == "conj":
+                                if len(x.find("children").findall("child")) == 1 and findNode(x.find("children").find("child").get("nid"), root).find("terminal").find("f").text != "comp":
                                     wynik.append(x)
     return wynik
 
@@ -187,6 +187,9 @@ def czyTylkoPojedynczeGlowy(root):
                     if count > 1:
                         ileTakich += 1
                         zbiory.append(tab)
+    for i in zbiory:
+        if len(i) == 3:
+            print(i)
     return ileTakich == 0, zbiory
 
 def podwojneGlowyWCzlonieKoordynacji(nodeCzlonu, nodePodwojnejGlowy, root, parent_map):
@@ -402,8 +405,8 @@ def czyPrzerwaWSzarym(node, root, parent_map, children_map):
     #print(f"Czy przerwa w szarym: {wynik}")
     return wynik
 def setInfo(tab, root, spójnik, parent_map, children_map):
-        if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
-            return tab
+        #if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
+         #   return tab
         #print(spójnik.attrib)
         rodzenstwo = getSiblings(spójnik, parent_map, children_map)
         if int(rodzenstwo[0].get("from")) > int(rodzenstwo[1].get("from")):
@@ -419,16 +422,16 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         #czlon2 = sortuj(getCzlon(getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map), root, parent_map), root.find("text").text, root, czyKoniecZdania)
         #print(f"czlon1sortuj: {czlon1}\nczlon2sortuj: {czlon2}")
      #   print(podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][0], root, parent_map))
-        whereSpójnik = int(spójnik.get("from"))
-        if not czyTylkoPojedynczeGlowy(root)[0]:
-            for i in range(len(czyTylkoPojedynczeGlowy(root)[1])):
-                if int(findNode(czyTylkoPojedynczeGlowy(root)[1][i][0], root).get("from")) < int(spójnik.get("from")):
-                    whereSpójnik -= 1
-                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
-                        dlugoscCzlon1 -= 1
-                else:
-                    if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[1], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
-                        dlugoscCzlon2 -= 1
+        #whereSpójnik = int(spójnik.get("from"))
+        #if not czyTylkoPojedynczeGlowy(root)[0]:
+         #   for i in range(len(czyTylkoPojedynczeGlowy(root)[1])):
+          #      if int(findNode(czyTylkoPojedynczeGlowy(root)[1][i][0], root).get("from")) < int(spójnik.get("from")):
+           #         whereSpójnik -= 1
+            #        if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[0], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+             #           dlugoscCzlon1 -= 1
+              #  else:
+               #     if podwojneGlowyWCzlonieKoordynacji(rodzenstwo[1], czyTylkoPojedynczeGlowy(root)[1][i], root, parent_map):
+                #        dlugoscCzlon2 -= 1
         czlon1, czlon2 = getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map)
        # print(f"1: {len(czlon1)}\n2: {len(czlon2)}")
         #print(f"1: {czlon1}\n2: {czlon2}")
@@ -456,13 +459,19 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         tab[11] = len(czlon1)
         tab[12] = czlon1
         tab[13] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
-        tab[14] = len(czlon2.split())
-        tab[15] = None#sylaby
-        tab[16] = len(czlon2)
-        tab[17] = czlon2
-        tab[18] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
-        tab[19] = root.find("text").text
-        tab[20] = root.get("sent_id")
+        tab[14] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+        tab[15] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
+        tab[16] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
+        tab[17] = len(czlon2.split())
+        tab[18] = None#sylaby
+        tab[19] = len(czlon2)
+        tab[20] = czlon2
+        tab[21] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
+        tab[22] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
+        tab[23] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
+        tab[24] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
+        tab[25] = root.find("text").text
+        tab[26] = root.get("sent_id")
         return tab
 
 def writeToFile(tab):
@@ -483,9 +492,12 @@ def writeToFile(tab):
                       "Słowa Pierwszego Członu",
                       "Sylaby Pierwszego Członu",
                       "Znaki Pierwszego Członu", "Pierwszy Człon", "Kategoria Pierwszego Członu",
-                      "Słowa Drugiego Członu",
-                      "Sylaby Drugiego Członu",
-                      "Znaki Drugiego Członu", "Drugi Człon", "Kategoria Drugiego Członu", "Całe Zdanie", "Sent_id"]
+                      "Głowa Pierwszego Członu", "Tag Głowy Pierwszego Członu",
+                      "Kategoria Głowy Pierwszego Członu", "Słowa Drugiego Członu",
+                      "Sylaby Drugiego Członu", "Znaki Drugiego Członu", "Drugi Człon",
+                      "Kategoria Drugiego Członu", "Głowa Drugiego Członu",
+                      "Tag Głowy Drugiego Członu", "Kategoria Głowy Drugiego Członu",
+                      "Całe Zdanie", "Sent_id"]
             writer = csv.DictWriter(f, fieldnames=header)
             if puste:
                 writer.writeheader()
@@ -504,17 +516,21 @@ def writeToFile(tab):
                                  "Znaki Pierwszego Członu": tab[i][11],
                                  "Pierwszy Człon": tab[i][12],
                                  "Kategoria Pierwszego Członu": tab[i][13],
-                                 "Słowa Drugiego Członu": tab[i][14],
-                                 "Sylaby Drugiego Członu": tab[i][15],
-                                 "Znaki Drugiego Członu": tab[i][16],
-                                 "Drugi Człon": tab[i][17],
-                                 "Kategoria Drugiego Członu": tab[i][18],
-                                 "Całe Zdanie": tab[i][19],
-                                 "Sent_id": tab[i][20]
+                                 "Głowa Pierwszego Członu": tab[i][14],
+                                 "Tag Głowy Pierwszego Członu": tab[i][15],
+                                 "Kategoria Głowy Pierwszego Członu": tab[i][16],
+                                 "Słowa Drugiego Członu": tab[i][17],
+                                 "Sylaby Drugiego Członu": tab[i][18],
+                                 "Znaki Drugiego Członu": tab[i][19],
+                                 "Drugi Człon": tab[i][20],
+                                 "Kategoria Drugiego Członu": tab[i][21],
+                                 "Głowa Drugiego Członu": tab[i][22],
+                                 "Tag Głowy Drugiego Członu": tab[i][23],
+                                 "Kategoria Głowy Drugiego Członu": tab[i][24],
+                                 "Całe Zdanie": tab[i][25],
+                                 "Sent_id": tab[i][26]
                                  })
             writer.writerow({})
-            writer.writerow({})
-
 #writeToFile(wyniki)
 def main():
     i = 0
@@ -563,6 +579,7 @@ def openFile(path):
     with open(path, "r"):
         writeToFile(analizeFile(path))
 def czyDrzewoFull(root):
+    print(root.find("answer-data").find("base-answer").get("type"))
     return root.find("answer-data").find("base-answer").get("type") == "FULL"
 def analizeFile(path):
     parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
@@ -594,7 +611,7 @@ def analizeFile(path):
                 #setInfo(informacje, root, x)
                 if len(getSiblings(x, parent_map, children_map)) == 2:
                     #print(getSiblings(x, parent_map, children_map))
-                    informacje = [None] * 21
+                    informacje = [None] * 27
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map)))
     return wyniki
 
@@ -605,11 +622,20 @@ main()
 # NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml <- przerwa w szarym??? złe drzewo chyba
 #NKJP_1M_0302000000011/morph_12-p/morph_12.66-s.xml <- to co wyżej
 
+###głowa członu, tag głowy i kategoria głowy DODAĆ
+
 #NKJP_1M_1102000000027/morph_2-p/morph_2.63-s.xml <- czy dobry nadrzędnik
 # NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml <- czy dobry nadrzędnik? czy może nie powinno go nie ma
 #NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml <- kolumny sue przestawiają
 #NKJP_1M_2002000160/morph_4-p/morph_4.38-s.xml to co wyżej
 #NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml <- jaki nadrzędnik? 'czuwać będzie'? jeśli tak, to jaki tag nadrzędnika
+
+
+#nadrzędnik ze złej strony NAPRAWIĆ
+#spójnik nie comp, ale może być interp np
+#kim są rodzice koordynacji albo nadrzędników??? dodatkowa kolumna "przodek"
+#powtórzyć to co w artykule, ale dla języka polskiego
+#
 """
 NKJP_1M_2002000131/morph_2-p/morph_2.20-s
 NKJP_1M_1303900001/morph_314-p/morph_314.49-s
