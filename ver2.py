@@ -3,14 +3,6 @@ import csv
 import xml.etree.ElementTree as ET
 import os
 
-
-#NKJP_1M_4scal-NIE/morph_38-p/morph_38.63-s.xml niebinarna koordynacj
-#NKJP_1M_1102000011/morph_1-p/morph_1.6-s.xml działa
-#NKJP_1M_4scal-KOT/morph_1-p/morph_1.51-s.xml niebinarna koordynacja (nie działa)
-#NKJP_1M_1202900065/morph_2-p/morph_2.15-s działa
-#NKJP_1M_1202900065/morph_2-p/morph_2.53-s
-
-
 def getActuallTree(node, dict):
     root = node
     for x in node.iter('node'):
@@ -55,11 +47,17 @@ def getSiblings(node, parent_map, children_map):
 def getSpojnikValue(node, children_map):
     return getChildren(node, children_map)[0].find('terminal').find('orth').text
 def getTagSpojnika(node, children_map):
-    #print(node.get("nid"))
-    if getChildren(node, children_map)[0].find("terminal") is None:
-        return getChildren(getChildren(node, children_map)[0], children_map)[0].find("terminal").find('f').text
+    print(node.get("nid"))
+    for i in getChildren(node, children_map):
+        print(f"aha: {i.get('nid')}")#czemu tutaj jest node wśrod dzieciuchów...
+    if node.find("terminal") is None:
+        if getChildren(node, children_map)[0].find("terminal") is None:
+            return getTagSpojnika(getChildren(node, children_map)[0], children_map)
+                #getChildren(getChildren(node, children_map)[0], children_map)[0].find("terminal").find('f').text
+        else:
+            return getChildren(node, children_map)[0].find('terminal').find('f').text
     else:
-        return getChildren(node, children_map)[0].find('terminal').find('f').text
+        return node.find("terminal").find("f").text
 def getKategoriaKoordynacji(node, parent_map, children_map):
     kategorie = []
     for x in getSiblings(node, parent_map, children_map):
@@ -130,18 +128,13 @@ def findNode(nid, root):
 def getNadrzednik(node, root, parent_map, children_map):
     nadrzednik = findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(node, root, parent_map), parent_map), root)
     return nadrzednik
-def getPozycjaNadrzednika(nodeNadrzednik, nodeSpojnik, root):
-    tab = root.find("text").text.split()
-    czyZnalazles = False
-    pozycja = "0"
-    for slowo in tab:
-        if not czyZnalazles:
-            if slowo == nodeNadrzednik:
-                czyZnalazles = True
-                pozycja = "L"
-            elif slowo == nodeSpojnik:
-                czyZnalazles = True
-                pozycja = "R"
+def getPozycjaNadrzednika(nodeNadrzednik, nodeSpojnik):
+    pozycja = 0
+    if int(nodeNadrzednik.get("from")) < int(nodeSpojnik.get("from")):
+        pozycja = "L"
+    elif int(nodeNadrzednik.get("from")) > int(nodeSpojnik.get("from")):
+        pozycja = "R"
+    #print(f"pozycja: {pozycja}")
     return pozycja
 
 def getKategoriaNadrzednika(node, parent_map):
@@ -404,6 +397,9 @@ def czyPrzerwaWSzarym(node, root, parent_map, children_map):
         wynik = False
     #print(f"Czy przerwa w szarym: {wynik}")
     return wynik
+def getPrzodek(nodeKoordynacji, root, parent_map): #pierwszy wspólny węzeł nadrzędnika i koordynacji
+    return getParent(getNodeWhereGreyEnds(nodeKoordynacji, root, parent_map), parent_map).find("nonterminal").find("category").text
+
 def setInfo(tab, root, spójnik, parent_map, children_map):
         #if getSpojnikValue(spójnik, children_map) == "," or getTagSpojnika(spójnik, children_map) != "conj":
          #   return tab
@@ -439,39 +435,42 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         #czlon2 = " ".join(czlon2)
         #print(f"czlon1: {dlugoscCzlon1}\nczlon2: {dlugoscCzlon2}")
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
-            #print(getNadrzednik(spójnik, root, parent_map, children_map).get("nid"))
-            tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text, getSpojnikValue(spójnik, children_map), root)
+            print(getNadrzednik(spójnik, root, parent_map, children_map).find("terminal").find("orth").text)
+            print("lol")
+            print(getNadrzednik(spójnik, root, parent_map, children_map).get("nid"))
+            tab[0] = getPozycjaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map), spójnik)
             tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
-            print(tab[1])
-            tab[2] = getTagSpojnika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), children_map)
+            #print(tab[1])
+            tab[2] = getTagSpojnika(getNadrzednik(spójnik, root, parent_map, children_map), parent_map)
             tab[3] = getKategoriaNadrzednika(getNadrzednik(spójnik, root, parent_map, children_map), parent_map)
             tab[4] = getKategoriaNadrzednika(getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map), parent_map)
+            tab[9] = getPrzodek(spójnik, root, parent_map)
         else:
             tab[0] = 0
         tab[5] = getSpojnikValue(spójnik, children_map)
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
         tab[8] = getKategoriaRodzicaKoordynacji(spójnik, parent_map)
-        tab[9] = len(czlon1.split())
+        tab[10] = len(czlon1.split())
         #for i in getSiblings(spójnik, parent_map, children_map):
          #   print(i.attrib)
-        tab[10] = None#sylaby
-        tab[11] = len(czlon1)
-        tab[12] = czlon1
-        tab[13] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
-        tab[14] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
-        tab[15] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
-        tab[16] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
-        tab[17] = len(czlon2.split())
-        tab[18] = None#sylaby
-        tab[19] = len(czlon2)
-        tab[20] = czlon2
-        tab[21] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
-        tab[22] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
-        tab[23] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
-        tab[24] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
-        tab[25] = root.find("text").text
-        tab[26] = root.get("sent_id")
+        tab[11] = None#sylaby
+        tab[12] = len(czlon1)
+        tab[13] = czlon1
+        tab[14] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
+        tab[15] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+        tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
+        tab[17] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
+        tab[18] = len(czlon2.split())
+        tab[19] = None#sylaby
+        tab[20] = len(czlon2)
+        tab[21] = czlon2
+        tab[22] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
+        tab[23] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
+        tab[24] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
+        tab[25] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
+        tab[26] = root.find("text").text
+        tab[27] = root.get("sent_id")
         return tab
 
 def writeToFile(tab):
@@ -489,8 +488,7 @@ def writeToFile(tab):
             header = ["Pozycja Nadrzędnika", "Nadrzędnik", "Tag Nadrzędnika", "Kategoria Nadrzędnika",
                       "Kategoria Rodzica Nadrzędnika", "Spójnik",
                       "Tag Spójnika", "Kategoria Koordynacji", "Kategoria Rodzica Koordynacji",
-                      "Słowa Pierwszego Członu",
-                      "Sylaby Pierwszego Członu",
+                      "Przodek", "Słowa Pierwszego Członu", "Sylaby Pierwszego Członu",
                       "Znaki Pierwszego Członu", "Pierwszy Człon", "Kategoria Pierwszego Członu",
                       "Głowa Pierwszego Członu", "Tag Głowy Pierwszego Członu",
                       "Kategoria Głowy Pierwszego Członu", "Słowa Drugiego Członu",
@@ -511,24 +509,25 @@ def writeToFile(tab):
                                  "Tag Spójnika": tab[i][6],
                                  "Kategoria Koordynacji": tab[i][7],
                                  "Kategoria Rodzica Koordynacji": tab[i][8],
-                                 "Słowa Pierwszego Członu": tab[i][9],
-                                 "Sylaby Pierwszego Członu": tab[i][10],
-                                 "Znaki Pierwszego Członu": tab[i][11],
-                                 "Pierwszy Człon": tab[i][12],
-                                 "Kategoria Pierwszego Członu": tab[i][13],
-                                 "Głowa Pierwszego Członu": tab[i][14],
-                                 "Tag Głowy Pierwszego Członu": tab[i][15],
-                                 "Kategoria Głowy Pierwszego Członu": tab[i][16],
-                                 "Słowa Drugiego Członu": tab[i][17],
-                                 "Sylaby Drugiego Członu": tab[i][18],
-                                 "Znaki Drugiego Członu": tab[i][19],
-                                 "Drugi Człon": tab[i][20],
-                                 "Kategoria Drugiego Członu": tab[i][21],
-                                 "Głowa Drugiego Członu": tab[i][22],
-                                 "Tag Głowy Drugiego Członu": tab[i][23],
-                                 "Kategoria Głowy Drugiego Członu": tab[i][24],
-                                 "Całe Zdanie": tab[i][25],
-                                 "Sent_id": tab[i][26]
+                                 "Przodek": tab[i][9],
+                                 "Słowa Pierwszego Członu": tab[i][10],
+                                 "Sylaby Pierwszego Członu": tab[i][11],
+                                 "Znaki Pierwszego Członu": tab[i][12],
+                                 "Pierwszy Człon": tab[i][13],
+                                 "Kategoria Pierwszego Członu": tab[i][14],
+                                 "Głowa Pierwszego Członu": tab[i][15],
+                                 "Tag Głowy Pierwszego Członu": tab[i][16],
+                                 "Kategoria Głowy Pierwszego Członu": tab[i][17],
+                                 "Słowa Drugiego Członu": tab[i][18],
+                                 "Sylaby Drugiego Członu": tab[i][19],
+                                 "Znaki Drugiego Członu": tab[i][20],
+                                 "Drugi Człon": tab[i][21],
+                                 "Kategoria Drugiego Członu": tab[i][22],
+                                 "Głowa Drugiego Członu": tab[i][23],
+                                 "Tag Głowy Drugiego Członu": tab[i][24],
+                                 "Kategoria Głowy Drugiego Członu": tab[i][25],
+                                 "Całe Zdanie": tab[i][26],
+                                 "Sent_id": tab[i][27]
                                  })
             writer.writerow({})
 #writeToFile(wyniki)
@@ -536,7 +535,9 @@ def main():
     i = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #path = ["../Składnica-frazowa-200319/NKJP_1M_3101000002/morph_6-p/morph_6.56-s.xml"]
+    #path = ["../Składnica-frazowa-200319/NKJP_1M_1202900064/morph_9-p/morph_9.63-s.xml"]
+        #"../Składnica-frazowa-200319/NKJP_1M_2001000031/morph_1-p/morph_1.32-s.xml"]
+    # "../Składnica-frazowa-200319/NKJP_1M_3101000002/morph_6-p/morph_6.56-s.xml"]
             #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
             #"../Składnica-frazowa-200319/NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml"]
     # "../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
@@ -558,28 +559,26 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
     #for i in path:
-      #  openFile(i)
+     #   openFile(i)
 
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
     for folder in os.listdir(path):
-        czyKolejnyFolder = True
         pathwithfolder = os.path.join(path, folder)
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml": #filename != "morph_53.61-s.xml"
+                if filename != ".xml" and filename != "morph_5.37-s.xml":
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     openFile(fullname)
-                    czyKolejnyFolder = False
                     i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
 def openFile(path):
     with open(path, "r"):
         writeToFile(analizeFile(path))
 def czyDrzewoFull(root):
-    print(root.find("answer-data").find("base-answer").get("type"))
+    #print(root.find("answer-data").find("base-answer").get("type"))
     return root.find("answer-data").find("base-answer").get("type") == "FULL"
 def analizeFile(path):
     parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
@@ -611,30 +610,26 @@ def analizeFile(path):
                 #setInfo(informacje, root, x)
                 if len(getSiblings(x, parent_map, children_map)) == 2:
                     #print(getSiblings(x, parent_map, children_map))
-                    informacje = [None] * 27
+                    informacje = [None] * 28
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map)))
     return wyniki
 
 main()
 
-### ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_6-p/morph_6.9-s.xml co tu co koordynuje 121 wiersz w .csv
-#../Składnica-frazowa-200319/NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml    brak nadrzędnika?
-# NKJP_1M_1202000010/morph_53-p/morph_53.61-s.xml <- przerwa w szarym??? złe drzewo chyba
-#NKJP_1M_0302000000011/morph_12-p/morph_12.66-s.xml <- to co wyżej
-
-###głowa członu, tag głowy i kategoria głowy DODAĆ
-
-#NKJP_1M_1102000000027/morph_2-p/morph_2.63-s.xml <- czy dobry nadrzędnik
-# NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml <- czy dobry nadrzędnik? czy może nie powinno go nie ma
-#NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml <- kolumny sue przestawiają
-#NKJP_1M_2002000160/morph_4-p/morph_4.38-s.xml to co wyżej
+###głowa członu, tag głowy i kategoria głowy DODAĆ [zrobione]
 #NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml <- jaki nadrzędnik? 'czuwać będzie'? jeśli tak, to jaki tag nadrzędnika
+#NKJP_1M_1202900064/morph_9-p/morph_9.63-s.xml <- brak "MATEUSZ:" w drzewie, więc nie może znaleźć nadr
 
 
-#nadrzędnik ze złej strony NAPRAWIĆ
-#spójnik nie comp, ale może być interp np
-#kim są rodzice koordynacji albo nadrzędników??? dodatkowa kolumna "przodek"
+#nadrzędnik ze złej strony NAPRAWIĆ [zrobione]
+#spójnik nie comp, ale może być interp np [chyba zrobione]
+#psuje się jak są dwa interpunkcyjne znaki obok sb
+#kim są rodzice koordynacji albo nadrzędników??? dodatkowa kolumna "przodek" [działa]
+#2428 róznych
+#zliczanie tokenów
+
 #powtórzyć to co w artykule, ale dla języka polskiego
+
 #
 """
 NKJP_1M_2002000131/morph_2-p/morph_2.20-s
