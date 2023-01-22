@@ -40,7 +40,7 @@ def getSiblings(node, parent_map, children_map):
     xd = []
     czyPauza=0
     for x in rozne_wyniki:
-        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text != "znakkonca" and x.find("nonterminal").find("category").text != "pauza":
+        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text not in ("znakkonca", "pauza", "przec"):
             xd.append(x)
         if x.find("nonterminal").find("category").text == "pauza":
             czyPauza=1
@@ -482,6 +482,7 @@ def writeToFile(tab):
     puste = True
     if tab == []:
         puste = True #PLIKI BEZ SPÓJNIKów
+        return 0
     else:
         with open("./data.csv", "r") as g:
             reader = csv.reader(g)
@@ -537,7 +538,7 @@ def writeToFile(tab):
                                  "Sent_id": tab[i][29]
                                  })
             writer.writerow({})
-            return 1
+            return len(tab)
 #writeToFile(wyniki)
 def main():
     i = 0
@@ -596,8 +597,7 @@ def openFile(path):
     ileAnaliz=0
     with open(path, "r"):
         x, y, z = analizeFile(path)
-        if writeToFile(x) == 1:
-            ileAnaliz=1
+        ileAnaliz = writeToFile(x)
         return y, ileAnaliz, z
 def czyDrzewoFull(root):
     #print(root.find("answer-data").find("base-answer").get("type"))
@@ -664,3 +664,9 @@ NKJP_1M_1305000000631/morph_1-p/morph_1.52-s
 NKJP_1M_1202910000003/morph_10-p/morph_10.20-s
 NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s
 """
+#NKJP_1M_2004000059/morph_3-p/morph_3.78-s.xml <- tokeny pierwsego członu źle, bo nie uwzględna ','
+#liczbaPauz: 93
+#przeanalizowanych koordynacji: 3232
+#przeanalizowanych zdań: ~2400
+#ile niebinarnych koordynacji: 1009
+#ile zdań ogółem: ~20000
