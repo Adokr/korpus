@@ -41,13 +41,15 @@ def getSiblings(node, parent_map, children_map):
     rozne_wyniki.discard(getParent(node, parent_map))
     xd = []
     czyPauza=0
+    przec= None
     for x in rozne_wyniki:
         if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text not in ("znakkonca", "pauza", "przec"):
             xd.append(x)
         if x.find("nonterminal").find("category").text == "pauza":
                 czyPauza=1
-
-    return xd, czyPauza
+        if x.find("nonterminal").find("category").text == "przec":
+                przec = x
+    return xd, czyPauza, przec
 
 def getSpojnikValue(node, children_map):
     return getChildren(node, children_map)[0].find('terminal').find('orth').text
@@ -451,7 +453,25 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
             syl2 += syllables(i)[0]
             #print(syllables(i)[1])
 
+        przec = getSiblings(spójnik, parent_map, children_map)[2]
 
+        if przec is not None:
+            if przec.get("from") < spójnik.get("from"):
+                if przec.get("from") > rodzenstwo[0].get("from"):
+                    czlon1 += findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                else:
+                    tmpczlon1 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                    tmpczlon1 += czlon1
+                    czlon1 = tmpczlon1
+                tab[10] = len(findTerminalAttributes(rodzenstwo[0], root, [], parent_map)) + 1
+            else:
+                if przec.get("from") > rodzenstwo[1].get("from"):
+                    czlon2 += findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                else:
+                    tmpczlon2 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                    tmpczlon2 += czlon2
+                    czlon2 = tmpczlon2
+                tab[19] = len(findTerminalAttributes(rodzenstwo[1], root, [], parent_map)) + 1
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
             #print(getNadrzednik(spójnik, root, parent_map, children_map).find("terminal").find("orth").text)
             #print("lol")
@@ -487,7 +507,7 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
         tab[8] = getKategoriaRodzicaKoordynacji(spójnik, parent_map)
-        tab[10] = len(findTerminalAttributes(rodzenstwo[0], root, [], parent_map))
+
         tab[11] = len(czlon1.split())
         #for i in getSiblings(spójnik, parent_map, children_map):
          #   print(i.attrib)
@@ -498,7 +518,6 @@ def setInfo(tab, root, spójnik, parent_map, children_map):
         tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
         tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
         tab[18] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
-        tab[19] = len(findTerminalAttributes(rodzenstwo[1], root, [], parent_map))
         tab[20] = len(czlon2.split())
         tab[21] = syl2
         tab[22] = len(czlon2)
@@ -581,20 +600,7 @@ def main():
     ilePełnych = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #path = ["../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
-            #../Składnica-frazowa-200319/NKJP_1M_1202900064/morph_9-p/morph_9.63-s.xml"]
-        #"../Składnica-frazowa-200319/NKJP_1M_2001000031/morph_1-p/morph_1.32-s.xml"]
-    # "../Składnica-frazowa-200319/NKJP_1M_3101000002/morph_6-p/morph_6.56-s.xml"]
-            #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_568-p/morph_568.67-s.xml"]
-            #"../Składnica-frazowa-200319/NKJP_1M_2002000160/morph_4-p/morph_4.61-s.xml"]
-    # "../Składnica-frazowa-200319/NKJP_1M_2004000000312/morph_18-p/morph_18.28-s.xml"]
-            #"../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
-    # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
-    # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
-            #../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.20-s.xml"]
-            #../Składnica-frazowa-200319/NKJP_1M_2002000082/morph_3-p/morph_3.62-s.xml"]
-    #NKJP_1M_1305000001001/morph_1-p/morph_1.41-s
-    #NKJP_1M_1202000010/morph_98-p/morph_98.47-s
+    path = ["../Składnica-frazowa-200319/NKJP_1M_1303910001/morph_280-p/morph_280.14-s.xml"]
     # ../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_2-p/morph_2.27-s.xml"]
         #"../Składnica-frazowa-200319/NKJP_1M_2002000131/morph_2-p/morph_2.20-s.xml",
         #"../Składnica-frazowa-200319/NKJP_1M_1303900001/morph_314-p/morph_314.49-s.xml",
@@ -605,10 +611,10 @@ def main():
 #"../Składnica-frazowa-200319/NKJP_1M_1305000000631/morph_1-p/morph_1.52-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_1202910000003/morph_10-p/morph_10.20-s.xml",
 #"../Składnica-frazowa-200319/NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s.xml"]
-    #for i in path:
-     #   openFile(i)
+    for i in path:
+        openFile(i)
 
-    with open("./data.csv", "w", newline=''):
+    """with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
     for folder in os.listdir(path):
@@ -624,7 +630,7 @@ def main():
                     ileAnaliz += analiza
                     ileNiebinarnych += niebinarne
                     ilePełnych += fulltrees
-                    i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
+                    i += 1 """#to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
     print(f"liczbaPauz: {ilePauz}")
     print(f"ile zdań z koordycjami przeaanalizowanymi: {ileAnaliz}")
     print(f"ile koordynacji niebinarnych (nieprzeanalizowane): {ileNiebinarnych}")
@@ -711,10 +717,15 @@ NKJP_1M_SzejnertCzarny/morph_5-p/morph_5.50-s
 #ile Full Trees: ~11000
 #ile zdań ogółem: ~20000
 
+#żeby 'przec' uwzględniał w członach [CHYBA GIT]
 #sylaby dodać od Kamila [DONE]
-#podwójne nadrzędniki [I GUESS]
+#podwójne nadrzędniki [DONE]
 #dodać niebinarne koordynacje (pierwszy i ostatni człon)
-#statystyki w R na podstawie artykułu który mam na mejlu
 #usunąć wiersze puste[DONE]
 
 #do końca lutego
+#statystyki w R na podstawie artykułu który mam na mejlu
+
+#WĄTPLIWOŚCI:
+#NKJP_1M_1302910000004/morph_47-p/morph_47.71-s <- tag 'nie' w nadrzędniku jest inne niż w drzewie na stronie (qub v part)
+#ogólnie tag 'part' jest jako 'qub' w tyych plikach
