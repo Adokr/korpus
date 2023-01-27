@@ -43,7 +43,7 @@ def getSiblings(node, parent_map, children_map):
     czyPauza=0
     przec= None
     for x in rozne_wyniki:
-        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text not in ("znakkonca", "pauza", "przec"):
+        if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text not in ("znakkonca", "pauza", "przec", "spójnik"):
             xd.append(x)
         if x.find("nonterminal").find("category").text == "pauza":
                 czyPauza=1
@@ -330,11 +330,13 @@ def syllables(text):
 def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
 
         if not czyNonBinary:
+            tab[28] = 2
             rodzenstwo = getSiblings(spójnik, parent_map, children_map)[0]
             if int(rodzenstwo[0].get("from")) > int(rodzenstwo[1].get("from")):
                 rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
         else:
             rodzenstwo = getSiblings(spójnik, parent_map, children_map)[0]
+            tab[28] = len(rodzenstwo)
             pierwsze = rodzenstwo[0]
             ostatnie = rodzenstwo[0]
             for x in rodzenstwo:
@@ -391,9 +393,9 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
                 for x in tabNadrzednik:
                     taginadrzednikow.append(findSzareTerminalAttribute(x, root).find("terminal").find("f").text)
                     nadrzedniki.append(findSzareTerminalAttribute(x, root).find("terminal").find("orth").text)
-                tab[1] = "/".join(nadrzedniki)
-                tab[2] = "/".join(taginadrzednikow)
-                tab[30] = "WOW"
+                tab[1] = "|".join(nadrzedniki)
+                tab[2] = "|".join(taginadrzednikow)
+                tab[31] = "tak"
 
             else:
                 tab[1] = getNadrzednik(spójnik, root, parent_map, children_map).find('terminal').find('orth').text
@@ -427,8 +429,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         tab[25] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
         tab[26] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
         tab[27] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
-        tab[28] = root.find("text").text
-        tab[29] = root.get("sent_id")
+        tab[29] = root.find("text").text
+        tab[30] = root.get("sent_id")
         return tab
 
 def writeToFile(tab):
@@ -453,7 +455,7 @@ def writeToFile(tab):
                       "Kategoria Głowy Pierwszego Członu","Tokeny Drugiego Członu", "Słowa Drugiego Członu",
                       "Sylaby Drugiego Członu", "Znaki Drugiego Członu", "Drugi Człon",
                       "Kategoria Drugiego Członu", "Głowa Drugiego Członu",
-                      "Tag Głowy Drugiego Członu", "Kategoria Głowy Drugiego Członu",
+                      "Tag Głowy Drugiego Członu", "Kategoria Głowy Drugiego Członu", "Liczba członów koordynacji",
                       "Całe Zdanie", "Sent_id", "czypodwójnynadrzędnik"]
             writer = csv.DictWriter(f, fieldnames=header)
             if puste:
@@ -487,9 +489,10 @@ def writeToFile(tab):
                                  "Głowa Drugiego Członu": tab[i][25],
                                  "Tag Głowy Drugiego Członu": tab[i][26],
                                  "Kategoria Głowy Drugiego Członu": tab[i][27],
-                                 "Całe Zdanie": tab[i][28],
-                                 "Sent_id": tab[i][29],
-                                 "czypodwójnynadrzędnik": tab[i][30]
+                                 "Liczba członów koordynacji": tab[i][28],
+                                 "Całe Zdanie": tab[i][29],
+                                 "Sent_id": tab[i][30],
+                                 "czypodwójnynadrzędnik": tab[i][31]
                                  })
             return len(tab)
 #writeToFile(wyniki)
@@ -561,11 +564,11 @@ def analizeFile(path):
                 ilePauz += getSiblings(x, parent_map, children_map)[1]
                 if len(getSiblings(x, parent_map, children_map)[0]) == 2:
                     #print(getSiblings(x, parent_map, children_map))
-                    informacje = [None] * 31
+                    informacje = [None] * 32
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map, False)))
                 elif len(getSiblings(x, parent_map, children_map)[0]) > 2:
                     ileNiebinarnych+=1
-                    informacje = [None] * 31
+                    informacje = [None] * 32
                     wyniki.append(copy.deepcopy(setInfo(informacje, root, x, parent_map, children_map, True)))
 
 
