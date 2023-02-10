@@ -212,8 +212,8 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
     indeksyCzlon2 = list(range(int(czlon2.get("from")), int(czlon2.get("to"))))
     glowi = []
     glowi2 = []
-    if not czyTylkoPojedynczeGlowy(root)[0]:
-        podwojneGlowy = czyTylkoPojedynczeGlowy(root)[1]
+    p, podwojneGlowy = czyTylkoPojedynczeGlowy(root)
+    if not p:
         for i in podwojneGlowy:
             for j in i:
                 glowi.append(j)
@@ -226,7 +226,7 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
     kolejnosc = []
     for i in indeksyCzlon1:
         for j in root.findall("node"):
-            if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i+1:
+            if int(j.get("from")) == i and int(j.get("to")) == i+1 and j.get("chosen") == "true":
                 if j.find("terminal") is not None:
                     if j.get("nid") not in glowi:
                         slowaCzlon1.append(j.find("terminal").find("orth").text)
@@ -234,14 +234,14 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             #tmp.append(k.find("terminal").find("orth").text)
                             kolejnosc.append(k)
-                        tmp = posortuj(kolejnosc)
-                        slowo = "".join(tmp)
-                        slowaCzlon1.append(slowo)
-                        tmp = []
+                        #tmp = posortuj(kolejnosc)
+                        #slowo = "".join(posortuj(kolejnosc))
+                        slowaCzlon1.append("".join(posortuj(kolejnosc)))
+                        #tmp = []
                         kolejnosc = []
     for i in indeksyCzlon2:
         for j in root.findall("node"):
-            if j.get("chosen") == "true" and int(j.get("from")) == i and int(j.get("to")) == i + 1:
+            if int(j.get("from")) == i and int(j.get("to")) == i + 1 and j.get("chosen") == "true":
                 if j.find("terminal") is not None:
                     if j.get("nid") not in glowi:
                         slowaCzlon2.append(j.find("terminal").find("orth").text)
@@ -249,11 +249,10 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             #tmp.append(k.find("terminal").find("orth").text)
                             kolejnosc.append(k)
-                        tmp = posortuj(kolejnosc)
-                        slowo = "".join(tmp)
-                        #print(tmp)
-                        slowaCzlon2.append(slowo)
-                        tmp = []
+                        #tmp = posortuj(kolejnosc)
+                        #slowo = "".join(posortuj(kolejnosc))
+                        slowaCzlon2.append("".join(posortuj(kolejnosc)))
+                        #tmp = []
                         kolejnosc = []
 
     a1 = " ".join(slowaCzlon1)
@@ -327,6 +326,22 @@ def syllables(text):
             n +=1
     return n, tildes
 
+def getInfoPodwyjnychGlow(node, root, parent_map):
+    tab = []
+    podwojnaGlowa = []
+    tagiPodwojneGlowy = []
+    if sprawdzIleTokenowNadrzednik(node, parent_map) > 1:
+        ociec = getParent(node, parent_map)
+        for x in ociec.iter("children"):
+            if x.get("chosen") == "true":
+                for y in x.iter("child"):
+                    if y.get("head") == "true":
+                        tab.append(findNode(y.get("nid"), root))
+        for x in tab:
+            tagiPodwojneGlowy.append(findSzareTerminalAttribute(x, root).find("terminal").find("f").text)
+            podwojnaGlowa.append(findSzareTerminalAttribute(x, root).find("terminal").find("orth").text)
+    return podwojnaGlowa, tagiPodwojneGlowy
+
 def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
 
         if not czyNonBinary:
@@ -380,21 +395,10 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
             tab[10] = 0
             tab[19] = 0
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
-            tabNadrzednik = []
-            nadrzedniki = []
-            taginadrzednikow = []
             if sprawdzIleTokenowNadrzednik(getNadrzednik(spójnik, root, parent_map, children_map), parent_map) > 1:
-                ociec = getParent(getNadrzednik(spójnik, root, parent_map, children_map), parent_map)
-                for x in ociec.iter("children"):
-                    if x.get("chosen") == "true":
-                        for y in x.iter("child"):
-                            if y.get("head") == "true":
-                                tabNadrzednik.append(findNode(y.get("nid"), root))
-                for x in tabNadrzednik:
-                    taginadrzednikow.append(findSzareTerminalAttribute(x, root).find("terminal").find("f").text)
-                    nadrzedniki.append(findSzareTerminalAttribute(x, root).find("terminal").find("orth").text)
-                tab[1] = "|".join(nadrzedniki)
-                tab[2] = "|".join(taginadrzednikow)
+                t1, t2 = getInfoPodwyjnychGlow(getNadrzednik(spójnik, root, parent_map, children_map), root, parent_map)
+                tab[1] = "|".join(t1)
+                tab[2] = "|".join(t2)
                 tab[31] = "tak"
 
             else:
@@ -407,6 +411,21 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
             tab[9] = getPrzodek(spójnik, root, parent_map)
         else:
             tab[0] = 0
+        if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map) > 1:
+            t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[0], root), root, parent_map)
+            tab[16] = "|".join(t1)
+            tab[17] = "|".join(t2)
+        else:
+            tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+            tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
+
+        if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map) > 1:
+            t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[1], root), root, parent_map)
+            tab[25] = "|".join(t1)
+            tab[26] = "|".join(t2)
+        else:
+            tab[25] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+            tab[26] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
         tab[5] = getSpojnikValue(spójnik, children_map)
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
@@ -417,8 +436,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         tab[13] = len(czlon1)
         tab[14] = czlon1
         tab[15] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
-        tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
-        tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
+        #tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+        #tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
         tab[18] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
         tab[19] += len(findTerminalAttributes(rodzenstwo[1], root, [], parent_map))
         tab[20] = len(czlon2.split())
@@ -426,8 +445,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         tab[22] = len(czlon2)
         tab[23] = czlon2
         tab[24] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
-        tab[25] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
-        tab[26] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
+        #tab[25] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
+        #tab[26] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
         tab[27] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
         tab[29] = root.find("text").text
         tab[30] = root.get("sent_id")
@@ -504,6 +523,7 @@ def main():
     ilePełnych = 0
     with open("./data.csv", "w", newline=''):
         print("")
+    #openFile("../Składnica-frazowa-200319/NKJP_1M_1202000010/morph_70-p/morph_70.24-s.xml")
     #openFile("../Składnica-frazowa-200319/NKJP_1M_3104000000106/morph_1-p/morph_1.34-s.xml")
     with open("./data.csv", "w", newline=''):
         print("")
@@ -608,3 +628,5 @@ main()
 #WĄTPLIWOŚCI:
 #NKJP_1M_1302910000004/morph_47-p/morph_47.71-s <- tag 'nie' w nadrzędniku jest inne niż w drzewie na stronie (qub v part)
 #ogólnie tag 'part' jest jako 'qub' w tyych plikach
+
+#dodane podwójne głowy członów i ich tagi
