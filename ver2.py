@@ -262,18 +262,19 @@ def ogarnijInterpunkcje(czlon):
             wynik.append(tmp)
         else:
             wynik.append(i)
-    if '"' in wynik:
+    #print(wynik)
+    if '"' in wynik or '„' in wynik:
         tmpCzlon = []
         przeskok = False
         for i in range(len(wynik)):
             if not przeskok:
-                if wynik[i] == '"' and not czyCudzyslowOtwarty:
+                if wynik[i] in ['"', '„'] and not czyCudzyslowOtwarty:
                     tmp = wynik[i]
                     tmp += wynik[i+1]
                     tmpCzlon.append(tmp)
                     przeskok = True
                     czyCudzyslowOtwarty = True
-                elif wynik[i] == '"':
+                elif wynik[i] in ['"', '„']:
                     tmp = tmpCzlon[-1]
                     del tmpCzlon[-1]
                     tmp += '"'
@@ -399,8 +400,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
             if sprawdzIleTokenowNadrzednik(getNadrzednik(spójnik, root, parent_map, children_map), parent_map) > 1:
                 t1, t2 = getInfoPodwyjnychGlow(getNadrzednik(spójnik, root, parent_map, children_map), root, parent_map)
-                tab[1] = "|".join(t1)
-                tab[2] = "|".join(t2)
+                tab[1] = "~".join(t1)
+                tab[2] = "~".join(t2)
                 tab[31] = "tak"
 
             else:
@@ -414,16 +415,16 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
             tab[0] = 0
         if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map) > 1:
             t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[0], root), root, parent_map)
-            tab[16] = "|".join(t1)
-            tab[17] = "|".join(t2)
+            tab[16] = "~".join(t1)
+            tab[17] = "~".join(t2)
         else:
             tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
             tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
 
         if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map) > 1:
             t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[1], root), root, parent_map)
-            tab[25] = "|".join(t1)
-            tab[26] = "|".join(t2)
+            tab[25] = "~".join(t1)
+            tab[26] = "~".join(t2)
         else:
             tab[25] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
             tab[26] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
@@ -531,7 +532,7 @@ def main():
         for anotherfolder in os.listdir(pathwithfolder):
             pathwithanotherfolder = os.path.join(pathwithfolder, anotherfolder)
             for filename in os.listdir(pathwithanotherfolder):
-                if filename != ".xml" and filename != "morph_5.37-s.xml":
+                #if filename != ".xml" and filename != "morph_5.37-s.xml":
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
                     pauz, analiza, niebinarne, fulltrees = openFile(fullname)
@@ -552,7 +553,9 @@ def openFile(path):
         ileAnaliz = writeToFile(x)
         return y, ileAnaliz, z, a
 def czyDrzewoFull(root):
-    #print(root.find("answer-data").find("base-answer").get("type"))
+    #if root.find("answer-data").find("base-answer").get("type") == "NOT_SENTENCE":
+     #   print(root.get("sent_id"))
+      #  print(root.find("answer-data").find("base-answer").get("type"))
     return root.find("answer-data").find("base-answer").get("type") == "FULL"
 def analizeFile(path):
     parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
@@ -566,7 +569,7 @@ def analizeFile(path):
     ilePełnych =0
     if czyDrzewoFull(root):
         ilePełnych +=1
-        #print(root.get("sent_id"))
+        print(root.get("sent_id"))
         node_root = root.find('node')
         assert node_root.get('nid') == '0'
         parent_map = getActuallTree(root, parent_map)  # nid = 0 to zawsze korzeń
@@ -628,3 +631,14 @@ main()
 #ogólnie tag 'part' jest jako 'qub' w tyych plikach
 
 #dodane podwójne głowy członów i ich tagi
+
+#FULL TREE
+
+
+#SPOTKANIE 13.02
+#format drzew nie pozwala wyciągnac informacji na temat koordynacji gdy spójnikiem jest 'zaś'; spójniki inkorporacyjne
+#jaki test do chi kwadrat
+#kubełki w wykresach
+#własne statystyki spróbować zrobić
+#spis treści pracy licencjackiej zrobić
+#spotkanie 6.03 o 16:00 <- jeśli nie to napisać
