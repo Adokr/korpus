@@ -45,15 +45,15 @@ funkcja1 <- function(data){
   
   dataSyllables <- dataSyllables %>% mutate(absSyllablesDiff = abs(syllablesDiff)) %>% 
           group_by(absSyllablesDiff) %>%     
-          summarize(shorterLeft = ifelse(charsDiff < 0, 1, 0), absSyllablesDiff)
+          summarize(shorterLeft = ifelse(syllablesDiff < 0, 1, 0), absSyllablesDiff)
   
   dataWords <- dataWords %>% mutate(absWordsDiff = abs(wordsDiff)) %>% 
                       group_by(absWordsDiff) %>%     
-                      summarize(shorterLeft = ifelse(charsDiff < 0, 1, 0), absWordsDiff)
+                      summarize(shorterLeft = ifelse(wordsDiff < 0, 1, 0), absWordsDiff)
   
   dataTokens <- dataTokens %>% mutate(absTokensDiff = abs(tokensDiff)) %>% 
                   group_by(absTokensDiff) %>%     
-                  summarize(shorterLeft = ifelse(charsDiff < 0, 1, 0), absTokensDiff)
+                  summarize(shorterLeft = ifelse(tokensDiff < 0, 1, 0), absTokensDiff)
 
   return(list(dataChars, dataSyllables, dataWords, dataTokens))
 }
