@@ -339,11 +339,11 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         spojnik_wartosc = getSpojnikValue(spójnik, children_map)
         rodzenstwo, nic, przec, pozostaleSpójniki = getSiblings(spójnik, parent_map, children_map)
         if not czyNonBinary:
-            tab[28] = 2
+            tab[10] = 2
             if int(rodzenstwo[0].get("from")) > int(rodzenstwo[1].get("from")):
                 rodzenstwo[0], rodzenstwo[1] = rodzenstwo[1], rodzenstwo[0]
         else:
-            tab[28] = len(rodzenstwo)
+            tab[10] = len(rodzenstwo)
             pierwsze = rodzenstwo[0]
             ostatnie = rodzenstwo[0]
             for x in rodzenstwo:
@@ -370,8 +370,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
                     tmpczlon1 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
                     tmpczlon1 += czlon1
                     czlon1 = tmpczlon1
-                tab[10] = 1
-                tab[19] = 0
+                tab[17] = 1
+                tab[26] = 0
             elif (int(przec.get("from"))+1 != int(pozostaleSpójniki[0].get("from"))):
                 if int(przec.get("from")) > int(rodzenstwo[1].get("from")):
                     czlon2 += findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
@@ -379,11 +379,11 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
                     tmpczlon2 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
                     tmpczlon2 += czlon2
                     czlon2 = tmpczlon2
-                tab[19] = 1
-                tab[10] = 0
+                tab[26] = 1
+                tab[17] = 0
             else:
-                tab[10] = 0
-                tab[19] = 0
+                tab[17] = 0
+                tab[26] = 0
 
             if pozostaleSpójniki != []:
                 print(root.get("sent_id"))
@@ -393,8 +393,8 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
             else:
                 tab[5] = spojnik_wartosc
         else:
-            tab[10] = 0
-            tab[19] = 0
+            tab[17] = 0
+            tab[26] = 0
             tab[5] = spojnik_wartosc
 
         if findSzareTerminalAttribute(getParent(getNodeWhereGreyEnds(spójnik, root, parent_map), parent_map), root) != getChildren(spójnik, children_map)[0] and not czyPrzerwaWSzarym(spójnik, root, parent_map, children_map):
@@ -415,37 +415,37 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
             tab[0] = 0
         if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map) > 1:
             t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[0], root), root, parent_map)
-            tab[16] = "~".join(t1)
-            tab[17] = "~".join(t2)
+            tab[13] = "~".join(t1)
+            tab[14] = "~".join(t2)
         else:
-            tab[16] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
-            tab[17] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
+            tab[13] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("orth").text
+            tab[14] = findSzareTerminalAttribute(rodzenstwo[0], root).find("terminal").find("f").text
 
         if sprawdzIleTokenowNadrzednik(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map) > 1:
             t1, t2 = getInfoPodwyjnychGlow(findSzareTerminalAttribute(rodzenstwo[1], root), root, parent_map)
-            tab[25] = "~".join(t1)
-            tab[26] = "~".join(t2)
+            tab[22] = "~".join(t1)
+            tab[23] = "~".join(t2)
         else:
-            tab[25] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
-            tab[26] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
+            tab[22] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("orth").text
+            tab[23] = findSzareTerminalAttribute(rodzenstwo[1], root).find("terminal").find("f").text
         #tab[5] = getSpojnikValue(spójnik, children_map)
         tab[6] = getTagSpojnika(spójnik, children_map)
         tab[7] = getKategoriaKoordynacji(spójnik, parent_map, children_map)
         tab[8] = getKategoriaRodzicaKoordynacji(spójnik, parent_map)
-        tab[10] += len(findTerminalAttributes(rodzenstwo[0], root, [], parent_map))
-        tab[11] = len(czlon1.split())
-        tab[12] = syl1
-        tab[13] = len(czlon1)
-        tab[14] = czlon1
-        tab[15] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
-        tab[18] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
-        tab[19] += len(findTerminalAttributes(rodzenstwo[1], root, [], parent_map))
-        tab[20] = len(czlon2.split())
-        tab[21] = syl2
-        tab[22] = len(czlon2)
-        tab[23] = czlon2
-        tab[24] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
-        tab[27] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
+        tab[17] += len(findTerminalAttributes(rodzenstwo[0], root, [], parent_map))
+        tab[16] = len(czlon1.split())
+        tab[18] = syl1
+        tab[19] = len(czlon1)
+        tab[11] = czlon1
+        tab[12] = getNodeWhereGreyEnds(rodzenstwo[0], root, parent_map).find("nonterminal").find("category").text
+        tab[15] = getParent(findSzareTerminalAttribute(rodzenstwo[0], root), parent_map).find("nonterminal").find("category").text
+        tab[26] += len(findTerminalAttributes(rodzenstwo[1], root, [], parent_map))
+        tab[25] = len(czlon2.split())
+        tab[27] = syl2
+        tab[28] = len(czlon2)
+        tab[20] = czlon2
+        tab[21] = getNodeWhereGreyEnds(rodzenstwo[1], root, parent_map).find("nonterminal").find("category").text
+        tab[24] = getParent(findSzareTerminalAttribute(rodzenstwo[1], root), parent_map).find("nonterminal").find("category").text
         tab[29] = root.find("text").text
         tab[30] = root.get("sent_id")
         return tab
@@ -463,53 +463,50 @@ def writeToFile(tab):
                     puste = False
 
         with open("./data.csv", "a") as f:
-            header = ["Pozycja Nadrzędnika", "Nadrzędnik", "Tag Nadrzędnika", "Kategoria Nadrzędnika",
-                      "Kategoria Rodzica Nadrzędnika", "Spójnik",
-                      "Tag Spójnika", "Kategoria Koordynacji", "Kategoria Rodzica Koordynacji",
-                      "Przodek","Tokeny Pierwszego Członu", "Słowa Pierwszego Członu", "Sylaby Pierwszego Członu",
-                      "Znaki Pierwszego Członu", "Pierwszy Człon", "Kategoria Pierwszego Członu",
-                      "Głowa Pierwszego Członu", "Tag Głowy Pierwszego Członu",
-                      "Kategoria Głowy Pierwszego Członu","Tokeny Drugiego Członu", "Słowa Drugiego Członu",
-                      "Sylaby Drugiego Członu", "Znaki Drugiego Członu", "Drugi Człon",
-                      "Kategoria Drugiego Członu", "Głowa Drugiego Członu",
-                      "Tag Głowy Drugiego Członu", "Kategoria Głowy Drugiego Członu", "Liczba członów koordynacji",
-                      "Całe Zdanie", "Sent_id", "czypodwójnynadrzędnik"]
+            header = ["governor.position", "governor.word", "governor.tag", "governor.category",
+                      "governors.parent.category", "conjunction.word",
+                      "conjunction.tag", "coordination.category", "coordinations.parent.category",
+                      "antecedent.category", "no.conjuncts", "L.conjunct", "L.category", "L.head.word",
+                      "L.head.tag", "L.head.category", "L.words", "L.tokens", "L.syllables",
+                      "L.chars", "R.conjunct", "R.category", "R.head.word", "R.head.tag",
+                      "R.head.category", "R.words", "R.tokens", "R.syllables", "R.chars",
+                      "sentence", "sent_id", "double.governor"]
             writer = csv.DictWriter(f, fieldnames=header)
             if puste:
                 writer.writeheader()
             for i in range(len(tab)):
-                writer.writerow({"Pozycja Nadrzędnika": tab[i][0],
-                                 "Nadrzędnik": tab[i][1],
-                                 "Tag Nadrzędnika": tab[i][2],
-                                 "Kategoria Nadrzędnika": tab[i][3],
-                                 "Kategoria Rodzica Nadrzędnika": tab[i][4],
-                                 "Spójnik": tab[i][5],
-                                 "Tag Spójnika": tab[i][6],
-                                 "Kategoria Koordynacji": tab[i][7],
-                                 "Kategoria Rodzica Koordynacji": tab[i][8],
-                                 "Przodek": tab[i][9],
-                                 "Tokeny Pierwszego Członu": tab[i][10],
-                                 "Słowa Pierwszego Członu": tab[i][11],
-                                 "Sylaby Pierwszego Członu": tab[i][12],
-                                 "Znaki Pierwszego Członu": tab[i][13],
-                                 "Pierwszy Człon": tab[i][14],
-                                 "Kategoria Pierwszego Członu": tab[i][15],
-                                 "Głowa Pierwszego Członu": tab[i][16],
-                                 "Tag Głowy Pierwszego Członu": tab[i][17],
-                                 "Kategoria Głowy Pierwszego Członu": tab[i][18],
-                                 "Tokeny Drugiego Członu": tab[i][19],
-                                 "Słowa Drugiego Członu": tab[i][20],
-                                 "Sylaby Drugiego Członu": tab[i][21],
-                                 "Znaki Drugiego Członu": tab[i][22],
-                                 "Drugi Człon": tab[i][23],
-                                 "Kategoria Drugiego Członu": tab[i][24],
-                                 "Głowa Drugiego Członu": tab[i][25],
-                                 "Tag Głowy Drugiego Członu": tab[i][26],
-                                 "Kategoria Głowy Drugiego Członu": tab[i][27],
-                                 "Liczba członów koordynacji": tab[i][28],
-                                 "Całe Zdanie": tab[i][29],
-                                 "Sent_id": tab[i][30],
-                                 "czypodwójnynadrzędnik": tab[i][31]
+                writer.writerow({"governor.position": tab[i][0],
+                                 "governor.word": tab[i][1],
+                                 "governor.tag": tab[i][2],
+                                 "governor.category": tab[i][3],
+                                 "governors.parent.category": tab[i][4],
+                                 "conjunction.word": tab[i][5],
+                                 "conjunction.tag": tab[i][6],
+                                 "coordination.category": tab[i][7],
+                                 "coordinations.parent.category": tab[i][8],
+                                 "antecedent.category": tab[i][9],
+                                 "L.tokens": tab[i][17], #17
+                                 "L.words": tab[i][16], #16
+                                 "L.syllables": tab[i][18], #18
+                                 "L.chars": tab[i][19], #19
+                                 "L.conjunct": tab[i][11], #11
+                                 "L.category": tab[i][12], #12
+                                 "L.head.word": tab[i][13], #13
+                                 "L.head.tag": tab[i][14], #14
+                                 "L.head.category": tab[i][15], #15
+                                 "R.tokens": tab[i][26], #26
+                                 "R.words": tab[i][25], #25
+                                 "R.syllables": tab[i][27], #27
+                                 "R.chars": tab[i][28], #28
+                                 "R.conjunct": tab[i][20], #20
+                                 "R.category": tab[i][21], #21
+                                 "R.head.word": tab[i][22], #22
+                                 "R.head.tag": tab[i][23], #23
+                                 "R.head.category": tab[i][24], #24
+                                 "no.conjuncts": tab[i][10], #10
+                                 "sentence": tab[i][29], #29
+                                 "sent_id": tab[i][30], #30
+                                 "double.governor": tab[i][31] #31
                                  })
             return len(tab)
 #writeToFile(wyniki)
@@ -521,9 +518,7 @@ def main():
     ilePełnych = 0
     with open("./data.csv", "w", newline=''):
         print("")
-    #openFile("../Składnica-frazowa-200319/NKJP_1M_0402000008/morph_4-p/morph_4.78-s.xml")
-    #openFile("../Składnica-frazowa-200319/NKJP_1M_1202000010/morph_70-p/morph_70.24-s.xml")
-    #openFile("../Składnica-frazowa-200319/NKJP_1M_3104000000106/morph_1-p/morph_1.34-s.xml")
+
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'

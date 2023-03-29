@@ -9,17 +9,17 @@ output: html_document
 library(tidyverse)
 library(ggplot2)
 library(gridExtra)
-data <- read.csv("py/FINAL_18_03.csv")
+data <- read.csv("29_03_naming.csv")
 
-data <- data %>% summarize(position=Pozycja.Nadrzędnika, 
-                          chars1=Znaki.Pierwszego.Członu, 
-                          syllables1=Sylaby.Pierwszego.Członu, 
-                          words1=Słowa.Pierwszego.Członu, 
-                          tokens1=Tokeny.Pierwszego.Członu, 
-                          chars2=Znaki.Drugiego.Członu, 
-                          syllables2=Sylaby.Drugiego.Członu, 
-                          words2=Słowa.Drugiego.Członu, 
-                          tokens2=Tokeny.Drugiego.Członu)
+data <- data %>% summarize(position=governor.position, 
+                          chars1=L.chars, 
+                          syllables1=L.syllables, 
+                          words1=L.words, 
+                          tokens1=L.tokens, 
+                          chars2=R.chars, 
+                          syllables2=R.syllables, 
+                          words2=R.words, 
+                          tokens2=R.tokens)
 
 dataLeftGov <- data[data$position == "L",]
 dataRightGov <- data[data$position == "R",]

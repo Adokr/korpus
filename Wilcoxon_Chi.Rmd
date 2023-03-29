@@ -7,7 +7,7 @@ output:
 
 ```{r}
 library(knitr)
-data <- read.csv("py/FINAL_18_03.csv")
+data <- read.csv("29_03_naming.csv")
 govOnTheLeft <- data[data[1] == "L",]
 govOnTheRight <- data[data[1] == "R",]
 govNo <- data[data[1] == "0",]
@@ -22,18 +22,18 @@ govPosition <- data.frame(Nadrzędnik_z_lewej = x,
 rownames(govPosition) <- c('Liczba', 'Procent')
 kable(govPosition, digits=1)
 
-govOnTheLeft[1,23] #znaki to 14 oraz 23
+govOnTheLeft[1,26] #znaki to 14 oraz 23
 
 funkcja1 <- function(data){
-  dlZnaki <- c(data[,14], data[,23])
-  dlSylaby <- c(data[,13], data[,22])
-  dlSlowa <- c(data[,12], data[,21])
-  dlTokeny <- c(data[,11], data[, 20])
+  dlZnaki <- c(data[,20], data[,29])
+  dlSylaby <- c(data[,19], data[,28])
+  dlSlowa <- c(data[,17], data[,26])
+  dlTokeny <- c(data[,18], data[, 27])
   człon = c(rep('PierwszyCzłon', nrow(data)), rep("DrugiCzłon", nrow(data)))
-  x <- c(median(data[, 14]), median(data[,13]), median(data[, 12]), median(data[, 11]))
-  y <- c(median(data[, 23]), median(data[, 22]), median(data[, 21]), median(data[, 20]))
-  z <- c(mean(data[, 14]), mean(data[,13]), mean(data[, 12]), mean(data[, 11]))
-  w <- c(mean(data[, 23]), mean(data[, 22]), mean(data[, 21]), mean(data[, 20]))
+  x <- c(median(data[, 20]), median(data[,19]), median(data[, 17]), median(data[, 18]))
+  y <- c(median(data[, 29]), median(data[, 28]), median(data[, 26]), median(data[, 27]))
+  z <- c(mean(data[, 20]), mean(data[,19]), mean(data[, 17]), mean(data[, 18]))
+  w <- c(mean(data[, 29]), mean(data[, 28]), mean(data[, 26]), mean(data[, 27]))
   a <- c(as.double(wilcox.test(dlZnaki ~ człon, data = data, alternative = "greater")[1]), 
          as.double(wilcox.test(dlSylaby ~ człon, data = data, alternative= "greater")[1]),
          as.double(wilcox.test(dlSlowa ~ człon, data = data, alternative = "greater")[1]),
@@ -48,29 +48,29 @@ funkcja1 <- function(data){
   return (wyn)
 }
 
-x <- nrow(govOnTheLeft[govOnTheLeft[14] != govOnTheLeft[23],])
+x <- nrow(govOnTheLeft[govOnTheLeft[20] != govOnTheLeft[29],])
 x
 funkcja2 <- function(data){
   govOnTheLeft <- data[data[1] == "L",]
   govOnTheRight <- data[data[1] == "R",]
   govNo <- data[data[1] == "0",]
   człon = c(rep('PierwszyCzłon', nrow(data)), rep("DrugiCzłon", nrow(data)))
-  x <- c(nrow(govOnTheLeft[govOnTheLeft[14] < govOnTheLeft[23],])/nrow(govOnTheLeft[govOnTheLeft[14] != govOnTheLeft[23],]),
-         nrow(govOnTheLeft[govOnTheLeft[13] < govOnTheLeft[22],])/nrow(govOnTheLeft[govOnTheLeft[13] != govOnTheLeft[22],]),
-         nrow(govOnTheLeft[govOnTheLeft[12] < govOnTheLeft[21],])/nrow(govOnTheLeft[govOnTheLeft[12] != govOnTheLeft[21],]),
-         nrow(govOnTheLeft[govOnTheLeft[11] < govOnTheLeft[20],])/nrow(govOnTheLeft[govOnTheLeft[11] != govOnTheLeft[20],]))
-  y <- c(nrow(govOnTheLeft[govOnTheLeft[14] != govOnTheLeft[23],]), 
-         nrow(govOnTheLeft[govOnTheLeft[13] != govOnTheLeft[22],]),
-         nrow(govOnTheLeft[govOnTheLeft[12] != govOnTheLeft[21],]),
-         nrow(govOnTheLeft[govOnTheLeft[11] != govOnTheLeft[20],]))
-  z <- c(nrow(govOnTheRight[govOnTheRight[14] < govOnTheRight[23],])/nrow(govOnTheRight[govOnTheRight[14] != govOnTheRight[23],]),
-         nrow(govOnTheRight[govOnTheRight[13] < govOnTheRight[22],])/nrow(govOnTheRight[govOnTheRight[13] != govOnTheRight[22],]),
-         nrow(govOnTheRight[govOnTheRight[12] < govOnTheRight[21],])/nrow(govOnTheRight[govOnTheRight[12] != govOnTheRight[21],]),
-         nrow(govOnTheRight[govOnTheRight[11] < govOnTheRight[20],])/nrow(govOnTheRight[govOnTheRight[11] != govOnTheRight[20],]))
-  w <- c(nrow(govOnTheRight[govOnTheRight[14] != govOnTheRight[23],]),
-         nrow(govOnTheRight[govOnTheRight[13] != govOnTheRight[22],]),
-         nrow(govOnTheRight[govOnTheRight[12] != govOnTheRight[21],]),
-         nrow(govOnTheRight[govOnTheRight[11] != govOnTheRight[20],]))
+  x <- c(nrow(govOnTheLeft[govOnTheLeft[20] < govOnTheLeft[29],])/nrow(govOnTheLeft[govOnTheLeft[20] != govOnTheLeft[29],]),
+         nrow(govOnTheLeft[govOnTheLeft[19] < govOnTheLeft[28],])/nrow(govOnTheLeft[govOnTheLeft[19] != govOnTheLeft[28],]),
+         nrow(govOnTheLeft[govOnTheLeft[17] < govOnTheLeft[26],])/nrow(govOnTheLeft[govOnTheLeft[17] != govOnTheLeft[26],]),
+         nrow(govOnTheLeft[govOnTheLeft[18] < govOnTheLeft[27],])/nrow(govOnTheLeft[govOnTheLeft[18] != govOnTheLeft[27],]))
+  y <- c(nrow(govOnTheLeft[govOnTheLeft[20] != govOnTheLeft[29],]), 
+         nrow(govOnTheLeft[govOnTheLeft[19] != govOnTheLeft[28],]),
+         nrow(govOnTheLeft[govOnTheLeft[17] != govOnTheLeft[26],]),
+         nrow(govOnTheLeft[govOnTheLeft[18] != govOnTheLeft[27],]))
+  z <- c(nrow(govOnTheRight[govOnTheRight[20] < govOnTheRight[29],])/nrow(govOnTheRight[govOnTheRight[20] != govOnTheRight[29],]),
+         nrow(govOnTheRight[govOnTheRight[19] < govOnTheRight[28],])/nrow(govOnTheRight[govOnTheRight[19] != govOnTheRight[28],]),
+         nrow(govOnTheRight[govOnTheRight[17] < govOnTheRight[26],])/nrow(govOnTheRight[govOnTheRight[17] != govOnTheRight[26],]),
+         nrow(govOnTheRight[govOnTheRight[18] < govOnTheRight[27],])/nrow(govOnTheRight[govOnTheRight[18] != govOnTheRight[27],]))
+  w <- c(nrow(govOnTheRight[govOnTheRight[20] != govOnTheRight[29],]),
+         nrow(govOnTheRight[govOnTheRight[19] != govOnTheRight[28],]),
+         nrow(govOnTheRight[govOnTheRight[17] != govOnTheRight[26],]),
+         nrow(govOnTheRight[govOnTheRight[18] != govOnTheRight[27],]))
   
   M1 <- as.table( rbind(c(x[1]*y[1], (1-x[1])*y[1]), c(z[1]*w[1], (1-z[1])*w[1]) ))
   chi_char <- chisq.test(M1)
@@ -99,30 +99,30 @@ funkcja3 <- function(data){
   govOnTheRight <- data[data[1] == "R",]
   govNo <- data[data[1] == "0",]
   człon = c(rep('PierwszyCzłon', nrow(data)), rep("DrugiCzłon", nrow(data)))
-  m <- c(nrow(govNo[govNo[14] < govNo[23],])/nrow(govNo[govNo[14] != govNo[23],]),
-         nrow(govNo[govNo[13] < govNo[22],])/nrow(govNo[govNo[13] != govNo[22],]),
-         nrow(govNo[govNo[12] < govNo[21],])/nrow(govNo[govNo[12] != govNo[21],]),
-         nrow(govNo[govNo[11] < govNo[20],])/nrow(govNo[govNo[11] != govNo[20],]))
-  n <- c(nrow(govNo[govNo[14] != govNo[23],]), 
-         nrow(govNo[govNo[13] != govNo[22],]),
-         nrow(govNo[govNo[12] != govNo[21],]),
-         nrow(govNo[govNo[11] != govNo[20],]))
-  x <- c(nrow(govOnTheLeft[govOnTheLeft[14] < govOnTheLeft[23],])/nrow(govOnTheLeft[govOnTheLeft[14] != govOnTheLeft[23],]),
-         nrow(govOnTheLeft[govOnTheLeft[13] < govOnTheLeft[22],])/nrow(govOnTheLeft[govOnTheLeft[13] != govOnTheLeft[22],]),
-         nrow(govOnTheLeft[govOnTheLeft[12] < govOnTheLeft[21],])/nrow(govOnTheLeft[govOnTheLeft[12] != govOnTheLeft[21],]),
-         nrow(govOnTheLeft[govOnTheLeft[11] < govOnTheLeft[20],])/nrow(govOnTheLeft[govOnTheLeft[11] != govOnTheLeft[20],]))
-  y <- c(nrow(govOnTheLeft[govOnTheLeft[14] != govOnTheLeft[23],]), 
-         nrow(govOnTheLeft[govOnTheLeft[13] != govOnTheLeft[22],]),
-         nrow(govOnTheLeft[govOnTheLeft[12] != govOnTheLeft[21],]),
-         nrow(govOnTheLeft[govOnTheLeft[11] != govOnTheLeft[20],]))
-  z <- c(nrow(govOnTheRight[govOnTheRight[14] < govOnTheRight[23],])/nrow(govOnTheRight[govOnTheRight[14] != govOnTheRight[23],]),
-         nrow(govOnTheRight[govOnTheRight[13] < govOnTheRight[22],])/nrow(govOnTheRight[govOnTheRight[13] != govOnTheRight[22],]),
-         nrow(govOnTheRight[govOnTheRight[12] < govOnTheRight[21],])/nrow(govOnTheRight[govOnTheRight[12] != govOnTheRight[21],]),
-         nrow(govOnTheRight[govOnTheRight[11] < govOnTheRight[20],])/nrow(govOnTheRight[govOnTheRight[11] != govOnTheRight[20],]))
-  w <- c(nrow(govOnTheRight[govOnTheRight[14] != govOnTheRight[23],]),
-         nrow(govOnTheRight[govOnTheRight[13] != govOnTheRight[22],]),
-         nrow(govOnTheRight[govOnTheRight[12] != govOnTheRight[21],]),
-         nrow(govOnTheRight[govOnTheRight[11] != govOnTheRight[20],]))
+  m <- c(nrow(govNo[govNo[20] < govNo[29],])/nrow(govNo[govNo[20] != govNo[29],]),
+         nrow(govNo[govNo[19] < govNo[28],])/nrow(govNo[govNo[19] != govNo[28],]),
+         nrow(govNo[govNo[17] < govNo[26],])/nrow(govNo[govNo[17] != govNo[26],]),
+         nrow(govNo[govNo[18] < govNo[27],])/nrow(govNo[govNo[18] != govNo[27],]))
+  n <- c(nrow(govNo[govNo[20] != govNo[29],]), 
+         nrow(govNo[govNo[19] != govNo[28],]),
+         nrow(govNo[govNo[17] != govNo[26],]),
+         nrow(govNo[govNo[18] != govNo[27],]))
+  x <- c(nrow(govOnTheLeft[govOnTheLeft[20] < govOnTheLeft[29],])/nrow(govOnTheLeft[govOnTheLeft[20] != govOnTheLeft[29],]),
+         nrow(govOnTheLeft[govOnTheLeft[19] < govOnTheLeft[28],])/nrow(govOnTheLeft[govOnTheLeft[19] != govOnTheLeft[28],]),
+         nrow(govOnTheLeft[govOnTheLeft[17] < govOnTheLeft[26],])/nrow(govOnTheLeft[govOnTheLeft[17] != govOnTheLeft[26],]),
+         nrow(govOnTheLeft[govOnTheLeft[18] < govOnTheLeft[27],])/nrow(govOnTheLeft[govOnTheLeft[18] != govOnTheLeft[27],]))
+  y <- c(nrow(govOnTheLeft[govOnTheLeft[20] != govOnTheLeft[29],]), 
+         nrow(govOnTheLeft[govOnTheLeft[19] != govOnTheLeft[28],]),
+         nrow(govOnTheLeft[govOnTheLeft[17] != govOnTheLeft[26],]),
+         nrow(govOnTheLeft[govOnTheLeft[18] != govOnTheLeft[27],]))
+  z <- c(nrow(govOnTheRight[govOnTheRight[20] < govOnTheRight[29],])/nrow(govOnTheRight[govOnTheRight[20] != govOnTheRight[29],]),
+         nrow(govOnTheRight[govOnTheRight[19] < govOnTheRight[28],])/nrow(govOnTheRight[govOnTheRight[19] != govOnTheRight[28],]),
+         nrow(govOnTheRight[govOnTheRight[17] < govOnTheRight[26],])/nrow(govOnTheRight[govOnTheRight[17] != govOnTheRight[26],]),
+         nrow(govOnTheRight[govOnTheRight[18] < govOnTheRight[27],])/nrow(govOnTheRight[govOnTheRight[18] != govOnTheRight[27],]))
+  w <- c(nrow(govOnTheRight[govOnTheRight[20] != govOnTheRight[29],]),
+         nrow(govOnTheRight[govOnTheRight[19] != govOnTheRight[28],]),
+         nrow(govOnTheRight[govOnTheRight[17] != govOnTheRight[26],]),
+         nrow(govOnTheRight[govOnTheRight[18] != govOnTheRight[27],]))
   
   M1 <- as.table( rbind(c(m[1]*n[1], (1-m[1])*n[1]), c(x[1]*y[1], (1-x[1])*y[1]) ))
   chi_char_L <- chisq.test(M1)
