@@ -28,7 +28,7 @@ def getSpojniki(parent_map, root):
                                 #print(z.attrib)
                                 if len(x.find("children").findall("child")) == 1 and findNode(x.find("children").find("child").get("nid"), root).find("terminal").find("f").text != "comp":
                                     wynik.append(x)
-    return wynik
+    return checkForCommonParents(wynik, parent_map)
 
 def getParent(node, parent_map):
     return parent_map.get(node)
@@ -44,7 +44,7 @@ def getSiblings(node, parent_map, children_map):
         rozne_wyniki.discard(stary)
     xd = []
     czyPauza=0
-    przec= None
+    przec= []
     pozostałeSpójniki = []
     for x in rozne_wyniki:
         if x.get("nid") != node.get("nid") and x.find("nonterminal").find("category").text not in ("znakkonca", "pauza", "przec", "spójnik"):
@@ -52,7 +52,7 @@ def getSiblings(node, parent_map, children_map):
         if x.find("nonterminal").find("category").text == "pauza":
             czyPauza=1
         if x.find("nonterminal").find("category").text == "przec":
-            przec = x
+            przec.append(x)
         if x.find("nonterminal").find("category").text == "spójnik":
             pozostałeSpójniki.append(x)
     return xd, czyPauza, przec, pozostałeSpójniki
@@ -194,6 +194,7 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
 
     czlon1 = rodzenstwoSpojnika[0]
     czlon2 = rodzenstwoSpojnika[1]
+
     if int(rodzenstwoSpojnika[0].get("from")) > int(rodzenstwoSpojnika[1].get("from")):
         czlon1 = rodzenstwoSpojnika[1]
         czlon2 = rodzenstwoSpojnika[0]
@@ -209,45 +210,48 @@ def getLepszeCzlonyKoordynacji(root, spójnik, parent_map, children_map):
                 glowi.append(j)
         for i in podwojneGlowy:
             glowi2.append(i[0])
-    #print(glowi)
     slowaCzlon1 = []
     slowaCzlon2 = []
-    tmp = []
     kolejnosc = []
+    tmp = []
     for i in indeksyCzlon1:
         for j in root.findall("node"):
             if int(j.get("from")) == i and int(j.get("to")) == i+1 and j.get("chosen") == "true":
-                if j.find("terminal") is not None:
+                if j.find("terminal") is not None and j not in kolejnosc:
                     if j.get("nid") not in glowi:
                         slowaCzlon1.append(j.find("terminal").find("orth").text)
                     elif j.get("nid") in glowi2:
+                        kolejnosc = []
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             #tmp.append(k.find("terminal").find("orth").text)
                             kolejnosc.append(k)
-                        #tmp = posortuj(kolejnosc)
-                        #slowo = "".join(posortuj(kolejnosc))
-                        slowaCzlon1.append("".join(posortuj(kolejnosc)))
-                        #tmp = []
-                        kolejnosc = []
+                        tmp = posortuj(kolejnosc)
+                        if len(tmp[-1]) > 3:
+                            slowaCzlon1 += tmp
+                        else:
+                            slowaCzlon1.append("".join(tmp))
+                        tmp = []
+
     for i in indeksyCzlon2:
         for j in root.findall("node"):
             if int(j.get("from")) == i and int(j.get("to")) == i + 1 and j.get("chosen") == "true":
-                if j.find("terminal") is not None:
+                if j.find("terminal") is not None and j not in kolejnosc:
                     if j.get("nid") not in glowi:
                         slowaCzlon2.append(j.find("terminal").find("orth").text)
                     elif j.get("nid") in glowi2:
+                        kolejnosc = []
                         for k in findTerminalAttributes(getParent(j, parent_map), root, [], parent_map):
                             #tmp.append(k.find("terminal").find("orth").text)
                             kolejnosc.append(k)
-                        #tmp = posortuj(kolejnosc)
-                        #slowo = "".join(posortuj(kolejnosc))
-                        slowaCzlon2.append("".join(posortuj(kolejnosc)))
-                        #tmp = []
-                        kolejnosc = []
+                        tmp = posortuj(kolejnosc)
+                        if len(tmp[-1]) > 3:
+                            slowaCzlon2 += tmp
+                        else:
+                            slowaCzlon2.append("".join(tmp))
+                        tmp = []
 
     a1 = " ".join(slowaCzlon1)
     a2 = " ".join(slowaCzlon2)
-    #print(a1)
     a1 = ogarnijInterpunkcje(a1)
     a2 = ogarnijInterpunkcje(a2)
     return a1, a2
@@ -263,21 +267,24 @@ def ogarnijInterpunkcje(czlon):
         else:
             wynik.append(i)
     #print(wynik)
-    if '"' in wynik or '„' in wynik:
+    if '"' in wynik or '„' in wynik or '(' in wynik:
         tmpCzlon = []
         przeskok = False
         for i in range(len(wynik)):
             if not przeskok:
-                if wynik[i] in ['"', '„'] and not czyCudzyslowOtwarty:
+                if wynik[i] in ['"', '„', '('] and not czyCudzyslowOtwarty:
                     tmp = wynik[i]
                     tmp += wynik[i+1]
                     tmpCzlon.append(tmp)
                     przeskok = True
                     czyCudzyslowOtwarty = True
-                elif wynik[i] in ['"', '„']:
+                elif wynik[i] in ['"', '„', ')']:
                     tmp = tmpCzlon[-1]
                     del tmpCzlon[-1]
-                    tmp += '"'
+                    if wynik[i] == ')':
+                        tmp += ')'
+                    else:
+                        tmp += '"'
                     tmpCzlon.append(tmp)
                     czyCudzyslowOtwarty = False
                 else:
@@ -335,9 +342,20 @@ def getInfoPodwyjnychGlow(node, root, parent_map):
         podwojnaGlowa.append(findSzareTerminalAttribute(node, root).find("terminal").find("orth").text)
     return podwojnaGlowa, tagiPodwojneGlowy
 
+def checkForCommonParents(spojniki, parent_map):
+    tabOfParents = []
+    wynik = []
+    for spojnik in spojniki:
+        parent = getParent(spojnik, parent_map)
+        if parent not in tabOfParents:
+            tabOfParents.append(parent)
+            wynik.append(spojnik)
+    return wynik
+
 def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         spojnik_wartosc = getSpojnikValue(spójnik, children_map)
-        rodzenstwo, nic, przec, pozostaleSpójniki = getSiblings(spójnik, parent_map, children_map)
+        rodzenstwo, nic, przecinki, pozostaleSpójniki = getSiblings(spójnik, parent_map, children_map)
+
         if not czyNonBinary:
             tab[10] = 2
             if int(rodzenstwo[0].get("from")) > int(rodzenstwo[1].get("from")):
@@ -362,34 +380,40 @@ def setInfo(tab, root, spójnik, parent_map, children_map, czyNonBinary):
         for i in wordsTab2:
             syl2 += syllables(i)[0]
 
-        if przec is not None:
+        if przecinki != []:
+            przec = przecinki[-1]
             if int(przec.get("from")) < int(spójnik.get("from")):
-                if int(przec.get("from")) > int(rodzenstwo[0].get("from")):
+                if int(przec.get("from")) == int(rodzenstwo[0].get("to")):
                     czlon1 += findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
-                else:
-                    tmpczlon1 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
-                    tmpczlon1 += czlon1
-                    czlon1 = tmpczlon1
+                #else:
+                #    tmpczlon1 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                #    tmpczlon1 += czlon1
+                #    czlon1 = tmpczlon1
                 tab[17] = 1
                 tab[26] = 0
             elif (int(przec.get("from"))+1 != int(pozostaleSpójniki[0].get("from"))):
-                if int(przec.get("from")) > int(rodzenstwo[1].get("from")):
+                if int(przec.get("from")) == int(rodzenstwo[1].get("to")):
                     czlon2 += findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
-                else:
-                    tmpczlon2 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
-                    tmpczlon2 += czlon2
-                    czlon2 = tmpczlon2
+                #else:
+                #    tmpczlon2 = findSzareTerminalAttribute(przec, root).find("terminal").find("orth").text
+                #    tmpczlon2 += czlon2
+                #    czlon2 = tmpczlon2
                 tab[26] = 1
                 tab[17] = 0
             else:
                 tab[17] = 0
                 tab[26] = 0
 
+            #print(root.get('sent_id'))
             if pozostaleSpójniki != []:
-                print(root.get("sent_id"))
+             #   for i in range(len(pozostaleSpójniki)):
+              #      print(pozostaleSpójniki[i].get('from'),getSpojnikValue(pozostaleSpójniki[i], children_map))
                 if int(przec.get('from')) == int(pozostaleSpójniki[0].get("from")) - 1:
                     tab[5] = spojnik_wartosc + '...' + getSpojnikValue(przec, children_map) + ' '
                     tab[5] += " ".join(getInfoPodwyjnychGlow(getChildren(pozostaleSpójniki[0], children_map)[0], root, parent_map)[0])
+                elif int(przec.get('from')) == int(spójnik.get("from")) - 1:
+                    tab[5] = getSpojnikValue(pozostaleSpójniki[0], children_map) + '...' + getSpojnikValue(przec, children_map) + ' '
+                    tab[5] += " ".join(getInfoPodwyjnychGlow(getChildren(spójnik, children_map)[0], root, parent_map)[0])
             else:
                 tab[5] = spojnik_wartosc
         else:
@@ -522,6 +546,12 @@ def main():
     with open("./data.csv", "w", newline=''):
         print("")
     path = '../Składnica-frazowa-200319'
+
+
+    '''lol = ['../Składnica-frazowa-200319/NKJP_1M_2004000000307/morph_6-p/morph_6.78-s.xml',
+           '../Składnica-frazowa-200319/NKJP_1M_7121900006/morph_27-p/morph_27.49-s.xml',
+           '../Składnica-frazowa-200319/NKJP_1M_1202900066/morph_7-p/morph_7.59-s.xml']'''
+
     for folder in os.listdir(path):
         pathwithfolder = os.path.join(path, folder)
         for anotherfolder in os.listdir(pathwithfolder):
@@ -530,12 +560,13 @@ def main():
                 #if filename != ".xml" and filename != "morph_5.37-s.xml":
                     #print(os.path.join(pathwithanotherfolder, filename))
                     fullname = os.path.join(pathwithanotherfolder, filename)
+                    #if fullname in lol:
                     pauz, analiza, niebinarne, fulltrees = openFile(fullname)
                     ilePauz += pauz
                     ileAnaliz += analiza
                     ileNiebinarnych += niebinarne
                     ilePełnych += fulltrees
-                    i += 1 #to jest main chyba taki ostateczny, że przeszukuje wszytskie foldery i w ogóle
+                    i += 1 #to jest main chyba tak`i ostateczny, że przeszukuje wszytskie foldery i w ogóle
     print(f"liczbaPauz: {ilePauz}")
     print(f"ile zdań z koordycjami przeaanalizowanymi: {ileAnaliz}")
     print(f"ile koordynacji niebinarnych (nieprzeanalizowane): {ileNiebinarnych}")
@@ -553,7 +584,7 @@ def czyDrzewoFull(root):
       #  print(root.find("answer-data").find("base-answer").get("type"))
     return root.find("answer-data").find("base-answer").get("type") == "FULL"
 def analizeFile(path):
-    parent_map = {}  # słownik, który które każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true; opr
+    parent_map = {}  # słownik, który każdemu węzłu przyporządkowuje rodzica; kluczami są wszystkie <node>, których atrybut 'chosen' = true
     children_map = {}
     #print(path)
     wyniki = []
@@ -564,7 +595,7 @@ def analizeFile(path):
     ilePełnych =0
     if czyDrzewoFull(root):
         ilePełnych +=1
-        print(root.get("sent_id"))
+        #print(root.get("sent_id"))
         node_root = root.find('node')
         assert node_root.get('nid') == '0'
         parent_map = getActuallTree(root, parent_map)  # nid = 0 to zawsze korzeń
@@ -576,6 +607,7 @@ def analizeFile(path):
         spojniki = getSpojniki(parent_map, root)
         if spojniki != []:
             for x in spojniki:
+                #print(x.get('nid'))
                 #setInfo(informacje, root, x)
                 ilePauz += getSiblings(x, parent_map, children_map)[1]
                 liczbarodzeństwa = len(getSiblings(x, parent_map, children_map)[0])
