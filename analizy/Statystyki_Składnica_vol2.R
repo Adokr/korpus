@@ -3,7 +3,7 @@ library(knitr)
 library(ggplot2)
 library(gridExtra)
 library(ggExtra)
-data <- read.csv("28_07_bez_przecinkow.csv")
+data <- read.csv("../dane\ po\ preprocessingu/Final_Data.csv")
 
 data <- data %>% summarize(position=governor.position, 
                            chars1=L.chars, 
@@ -75,69 +75,6 @@ x9 <- do.call(rbind.data.frame, No[1])
 x10 <- do.call(rbind.data.frame, No[2])
 x11 <- do.call(rbind.data.frame, No[3])
 x12 <- do.call(rbind.data.frame, No[4])
-
-# L1 <- ggplot(x1, aes(absCharsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in characters") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# L2 <- ggplot(x2, aes(absSyllablesDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in syllables") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# L3 <- ggplot(x3, aes(absWordsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in words") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# L4 <- ggplot(x4, aes(absTokensDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in tokens") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# R1 <- ggplot(x5, aes(absCharsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in characters") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.1, 1))
-# R2 <- ggplot(x6, aes(absSyllablesDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in syllables") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.1, 1))
-# R3 <- ggplot(x7, aes(absWordsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in words") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.1, 1))
-# R4 <- ggplot(x8, aes(absTokensDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in tokens") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.1, 1))
-# N1 <- ggplot(x9, aes(absCharsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in characters") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# N2 <- ggplot(x10, aes(absSyllablesDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in syllables") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# N3 <- ggplot(x11, aes(absWordsDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in words") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# N4 <- ggplot(x12, aes(absTokensDiff, shorterLeft)) +
-#   geom_smooth(method="glm", formula = y ~ x, method.args = list(family = binomial))+
-#   labs(x = "absolute difference in tokens") +
-#   labs(y = "proportion of shorter left conjuncts")+
-#   coord_cartesian(ylim=c(0.4, 1))
-# 
-# ggpubr::ggarrange(N1, N2, N3, N4, L1, L2, L3, L4, R1, R2, R3, R4, ncol=4, nrow=3)
 
 x1$type = "L"
 x2$type = "L"

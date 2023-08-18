@@ -1,6 +1,6 @@
 library(knitr)
 library(tidyverse)
-data <- read.csv("28_07_bez_przecinkow.csv")
+data <- read.csv("../dane\ po\ preprocessingu/Final_Data.csv")
 govOnTheLeft <- data[data[1] == "L",]
 govOnTheRight <- data[data[1] == "R",]
 govNo <- data[data[1] == "0",]
